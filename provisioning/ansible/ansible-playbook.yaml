@@ -7,4 +7,8 @@
   - role: bash-environment
   - role: ansible-environment
   - role: vagrant-environment
+  - role: docker
+    vars:
+      docker_users:
+      - "{{ vagrant_user }}"
   - role: dist-upgrade
