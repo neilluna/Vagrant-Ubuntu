@@ -1,0 +1,10 @@
+---
+- hosts: self
+  vars_files:
+  - /etc/provisioning/vagrant-vars.yaml
+  roles:
+  - role: git
+  - role: bash-environment
+  - role: ansible-environment
+  - role: vagrant-environment
+  - role: dist-upgrade
