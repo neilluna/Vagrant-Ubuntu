@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Docker and Docker Compose. The Vagrant user is added to the Docker group.
+- Latest Python 3 and Python 3 Pip.
 
 ## [1.0.0] - 2018-07-13
 

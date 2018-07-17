@@ -11,4 +11,5 @@
     vars:
       docker_users:
       - "{{ vagrant_user }}"
+  - role: python3
   - role: dist-upgrade
