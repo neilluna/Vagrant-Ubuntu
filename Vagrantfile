@@ -31,8 +31,14 @@ Vagrant.configure("2") do |config|
       shell.env = {
         "VAGRANT_VM_NAME" => vagrant_vm_name,
         "VAGRANT_USER" => vagrant_vm_user,
-        "VAGRANT_USER_GROUP" => vagrant_vm_user_group
+        "VAGRANT_USER_GROUP" => vagrant_vm_user_group,
+        "GIT_USER_NAME" => ENV["GIT_USER_NAME"],
+        "GIT_USER_EMAIL" => ENV["GIT_USER_EMAIL"]
       }
+
+      git_ssh_private_key = ""
+      File.foreach(ENV["GIT_SSH_PRIVATE_KEY_FILE"]) {|line|git_ssh_private_key << line}
+      shell.env["GIT_SSH_PRIVATE_KEY"] = Base64.strict_encode64(git_ssh_private_key)
     end
   end
 end

@@ -1,11 +1,13 @@
 ---
 - hosts: self
   vars_files:
+  - /etc/provisioning/git-vars.yaml
   - /etc/provisioning/vagrant-vars.yaml
   roles:
   - role: git
   - role: bash-environment
   - role: ansible-environment
+  - role: git-environment
   - role: vagrant-environment
   - role: docker
     vars:
