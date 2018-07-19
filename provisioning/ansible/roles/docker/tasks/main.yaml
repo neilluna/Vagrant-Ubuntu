@@ -13,11 +13,13 @@
 - name: Running apt-get update ...
   apt:
     update_cache: yes
+    state: latest
   become: yes
 
 - name: Installing ...
   apt:
     name: docker-ce
+    state: latest
   become: yes
 
 - name: Ensuring the service is started and enabled at boot ...

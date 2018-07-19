@@ -201,7 +201,7 @@ source ${ansible_vars_script}
 
 export ANSIBLE_HOST_KEY_CHECKING=False
 
-ansible_playbook=/vagrant/provisioning/ansible/ansible-playbook.yaml
+ansible_playbook=/vagrant/provisioning/ansible/provision-self.yaml
 log ${cyan} "Playing ${ansible_playbook} ..."
 ansible-playbook ${ansible_playbook} || exit 1
 

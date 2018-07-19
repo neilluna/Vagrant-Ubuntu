@@ -4,14 +4,12 @@
   - /etc/provisioning/git-vars.yaml
   - /etc/provisioning/vagrant-vars.yaml
   roles:
-  - role: git
-  - role: bash-environment
   - role: ansible-environment
   - role: git-environment
   - role: vagrant-environment
+  - role: python3
   - role: docker
     vars:
       docker_users:
       - "{{ vagrant_user }}"
-  - role: python3
   - role: dist-upgrade
