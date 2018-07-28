@@ -13,7 +13,7 @@ Vagrant.configure("2") do |config|
       provider.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
       provider.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
       provider.gui = false
-      provider.memory = 2048
+      provider.memory = 4096
     end
     sys.vm.network "private_network", type: "dhcp"
     sys.vm.synced_folder ".", "/vagrant",
