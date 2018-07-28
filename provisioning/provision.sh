@@ -11,6 +11,24 @@ cyan='\e[36m'
 white='\e[37m'
 reset='\e[0m'
 
+function add_self_to_known_hosts()
+{
+  user=${1}
+  users_home_dir=$(eval echo ~${1})
+  users_known_hosts_file=${users_home_dir}/.ssh/known_hosts
+  if [ ! -f ${users_known_hosts_file} ]; then
+    log ${cyan} "Creating ${users_known_hosts_file} ..."
+    sudo touch ${users_known_hosts_file}
+    sudo chmod u+rw-x,go+r-wx ${users_known_hosts_file}
+    sudo chown ${user}:${user} ${users_known_hosts_file}
+  fi
+  ssh-keygen -F 127.0.0.1 -f ${users_known_hosts_file} > /dev/null 2>&1
+  if [ ${?} -ne 0 ]; then
+    log ${cyan} "Adding the VM's SSH fingerprint to ${users_known_hosts_file} ..."
+    ssh-keyscan -H 127.0.0.1 >> ${users_known_hosts_file}
+  fi
+}
+
 # Using ANSI escape codes for color works, yet tput does not.
 # This may be caused by tput not being able to determine the terminal type.
 function log()
@@ -69,6 +87,9 @@ retry_if_fail sudo apt-get update
 
 log ${cyan} "Installing Ansible ..."
 retry_if_fail sudo apt-get -y install ansible
+
+add_self_to_known_hosts $(whoami)
+add_self_to_known_hosts ${VAGRANT_USER}
 
 vagrant_user_home_dir=$(eval echo ~${VAGRANT_USER})
 
@@ -198,8 +219,6 @@ sudo chown root:root ${vagrant_vars_yaml}
 
 log ${cyan} "Sourcing ${ansible_vars_script} ..."
 source ${ansible_vars_script}
-
-export ANSIBLE_HOST_KEY_CHECKING=False
 
 ansible_playbook=/vagrant/provisioning/ansible/provision-self.yaml
 log ${cyan} "Playing ${ansible_playbook} ..."
