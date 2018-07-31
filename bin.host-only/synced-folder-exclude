@@ -1,0 +1,7 @@
+.env
+.git/
+.gitignore
+.vagrant/
+bin.host-only/
+ubuntu-xenial-16.04-cloudimg-console.log
+Vagrantfile

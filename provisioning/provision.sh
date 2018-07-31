@@ -58,7 +58,7 @@ function retry_if_fail()
   fi
 }
 
-set_permissions_script=/vagrant/provisioning/set-permissions.sh
+set_permissions_script=/vagrant/bin.vm-only/set-permissions.sh
 log ${cyan} "Running ${set_permissions_script} ..."
 chmod u+rwx,go+rx-w ${set_permissions_script}
 ${set_permissions_script}

@@ -64,7 +64,7 @@ cd /vagrant
 temp_dir=$(mktemp -dt "$(basename ${0}).XXXXXXXXXX")
 
 # Filter out blank lines and comments.
-egrep -v '^[[:space:]]*(#.*)?$' provisioning/set-permissions-exclude > ${temp_dir}/exclude
+egrep -v '^[[:space:]]*(#.*)?$' bin.vm-only/set-permissions-exclude > ${temp_dir}/exclude
 
 # Permission changers.
 find . -type d ! -name '.'  | exclude_and_chmod u+rwx,go+rx-w
