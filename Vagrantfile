@@ -20,7 +20,7 @@ Vagrant.configure("2") do |config|
       type: "rsync",
       create: "true",
       rsync__args: [
-        "-lrt",
+        "-lrtz",
         "--exclude-from=bin.host-only/synced-folder-exclude",
         "--chown=#{vagrant_vm_user}:#{vagrant_vm_user_group}"
       ],
