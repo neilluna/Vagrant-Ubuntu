@@ -20,11 +20,11 @@ Vagrant.configure("2") do |config|
       type: "rsync",
       create: "true",
       rsync__args: [
-         "-lrt",
-         "--exclude-from=bin/synced-folder-exclude",
-         "--chown=#{vagrant_vm_user}:#{vagrant_vm_user_group}"
-        ],
-			rsync__verbose: "true"
+        "-lrtz",
+        "--exclude-from=bin.host-only/synced-folder-exclude",
+        "--chown=#{vagrant_vm_user}:#{vagrant_vm_user_group}"
+      ],
+      rsync__verbose: "true"
     sys.vm.provision "shell" do |shell|
       shell.keep_color = true
       shell.path = "provisioning/provision.sh"
