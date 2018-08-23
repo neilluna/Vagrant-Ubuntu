@@ -7,9 +7,14 @@
   - role: ansible-environment
   - role: git-environment
   - role: vagrant-environment
+  - role: build-essential
   - role: python3
   - role: docker
     vars:
+      docker_compose_version: "1.21.2"
       docker_users:
       - "{{ vagrant_user }}"
+  - role: sqlite
+  - role: unzip
+  - role: zip
   - role: dist-upgrade
