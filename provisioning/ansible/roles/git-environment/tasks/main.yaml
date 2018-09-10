@@ -4,19 +4,11 @@
     src: .bashrc.d/git-vars.sh
     dest: ~/.bashrc.d/git-vars.sh
     mode: u+x
+
 - name: Checking if ~/.gitconfig exists ...
   stat: path=~/.gitconfig
   register: gitconfig
+
 - name: Creating ~/.gitconfig ...
   shell: ~/bin/create-gitconfig.sh "{{ git_user_name }}" "{{ git_user_email }}"
   when: (gitconfig.stat.exists == False)
-- name: Setting global user name ...
-  git_config:
-    name: user.name
-    scope: global
-    value: "{{ git_user_name }}"
-- name: Setting global user email ...
-  git_config:
-    name: user.email
-    scope: global
-    value: "{{ git_user_email }}"

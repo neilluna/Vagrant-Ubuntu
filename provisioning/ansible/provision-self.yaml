@@ -4,6 +4,7 @@
   - /etc/provisioning/git-vars.yaml
   - /etc/provisioning/vagrant-vars.yaml
   roles:
+  - role: dist-upgrade
   - role: ansible-environment
   - role: git-environment
   - role: vagrant-environment
@@ -17,4 +18,3 @@
   - role: sqlite
   - role: unzip
   - role: zip
-  - role: dist-upgrade
