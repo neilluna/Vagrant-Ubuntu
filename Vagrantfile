@@ -48,14 +48,12 @@ module Vagrant_Ansible_Linux
     return false
   end
 
-  # Print an error message and abort if some, but not all, of the Git environment variables are set.
-  # Return true if all of the Git environment variables are set.
-  # Return false if none of the Git environment variables are set.
-  def self.check_git_env_vars?()
-    @env_vars = ["GIT_USER_NAME", "GIT_USER_EMAIL", "GIT_SSH_PRIVATE_KEY_FILE"]
-    if !are_all_env_vars_present? @env_vars
+  # Print an error message and abort if any of the required environment variables are missing.
+  def self.check_required_env_vars()
+    env_vars = ["GIT_USER_NAME", "GIT_USER_EMAIL", "GIT_SSH_PRIVATE_KEY_FILE", "VAGRANT_VM_PREFIX"]
+    if !are_all_env_vars_present? env_vars
         puts "Error: Some environment variables are missing."
-        puts "Check: #{@env_vars.join(", ")}"
+        puts "Check: #{env_vars.join(", ")}"
         exit!
     end
   end
@@ -64,7 +62,7 @@ module Vagrant_Ansible_Linux
   def self.configure
     Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       config.env.enable # Enable vagrant-env.
-      check_git_env_vars?
+      check_required_env_vars
       if check_digitalocean_env_vars?
         configure_digitalocean config
       end
@@ -76,9 +74,10 @@ module Vagrant_Ansible_Linux
 
   # Configure the DigitalOcean build VM.
   def self.configure_digitalocean(config)
-    config.vm.define "do-build", autostart: false do |sys|
+    name = "#{ENV["VAGRANT_VM_PREFIX"]}-do"
+    config.vm.define name, autostart: false do |sys|
       sys.vm.box = "digital_ocean"
-      sys.vm.hostname = "do-build"
+      sys.vm.hostname = name
       sys.ssh.private_key_path = ENV["DIGITALOCEAN_PRIVATE_KEY_FILE"]
       sys.vm.provider "digital_ocean" do |provider|
         provider.token = ENV["DIGITALOCEAN_API_TOKEN"]
@@ -94,9 +93,10 @@ module Vagrant_Ansible_Linux
 
   # Configure the VirtualBox build VM.
   def self.configure_virtualbox(config)
-    config.vm.define "vb-build", autostart: false do |sys|
+    name = "#{ENV["VAGRANT_VM_PREFIX"]}-vb"
+    config.vm.define name, autostart: false do |sys|
       sys.vm.box = "ubuntu/xenial64"
-      sys.vm.hostname = "vb-build"
+      sys.vm.hostname = name
       sys.vm.provider "virtualbox" do |provider|
         provider.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
         provider.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
