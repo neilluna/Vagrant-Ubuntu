@@ -104,9 +104,6 @@ module Vagrant_Ansible_Linux
         provider.memory = 4096
       end
       sys.vm.network "private_network", type: "dhcp"
-      sys.vm.network "forwarded_port", guest: 80, host: 8080
-      sys.vm.network "forwarded_port", guest: 5000, host: 5000
-      sys.vm.network "forwarded_port", guest: 9999, host: 9999
       sync_folder sys, "vagrant", "vagrant"
       provision sys, "vagrant", "vagrant"
     end
