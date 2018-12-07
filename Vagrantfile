@@ -81,7 +81,7 @@ module Vagrant_Ansible_Linux
       sys.ssh.private_key_path = ENV["DIGITALOCEAN_PRIVATE_KEY_FILE"]
       sys.vm.provider "digital_ocean" do |provider|
         provider.token = ENV["DIGITALOCEAN_API_TOKEN"]
-        provider.image = "ubuntu-16-04-x64"
+        provider.image = "ubuntu-18-04-x64"
         provider.region = "nyc1"
         provider.size = "4gb"
         provider.ssh_key_name = ENV["DIGITALOCEAN_SSH_KEY_NAME"]
@@ -95,7 +95,7 @@ module Vagrant_Ansible_Linux
   def self.configure_virtualbox(config)
     name = "#{ENV["VAGRANT_VM_PREFIX"]}-vb"
     config.vm.define name, autostart: false do |sys|
-      sys.vm.box = "ubuntu/xenial64"
+      sys.vm.box = "ubuntu/bionic64"
       sys.vm.hostname = name
       sys.vm.provider "virtualbox" do |provider|
         provider.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
