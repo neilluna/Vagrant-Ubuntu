@@ -103,7 +103,7 @@ module Vagrant_Ansible_Linux
         provider.gui = false
         provider.memory = 4096
       end
-      sys.vm.network "private_network", type: "dhcp"
+      sys.vm.network "public_network", type: "dhcp"
       sync_folder sys, "vagrant", "vagrant"
       provision sys, "vagrant", "vagrant"
     end
