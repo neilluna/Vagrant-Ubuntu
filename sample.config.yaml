@@ -1,16 +1,15 @@
-# Git credentials.
-GIT_USER_EMAIL='user@email.com'
-GIT_USER_NAME='Git User'
-GIT_SSH_PRIVATE_KEY_FILE='\native\os\path\to\the\private\ssh\key'
-
-# Vagrant VM hostname prefix.
-# Example: username-issue-number
-VAGRANT_VM_PREFIX=hostname-prefix
-
-# DigitalOcean credentials.
-DIGITALOCEAN_API_TOKEN=12345abcde
-DIGITALOCEAN_PRIVATE_KEY_FILE='\native\os\path\to\the\private\ssh\key'
-DIGITALOCEAN_SSH_KEY_NAME=digitalocean-ssh-key-name
-
-# Unset to disable the VirtualBox Vagrant target.
-# VAGRANT_IGNORE_VIRTUALBOX=true
+---
+git:
+  user_email: 'user@email.com'
+  user_name: 'Git User'
+  ssh_private_key_file: '\native\os\path\to\the\private\ssh\key'
+digitalocean:
+  api_token: 12345abcde
+  private_key_file: '\native\os\path\to\the\private\ssh\key'
+  ssh_key_name: digitalocean-ssh-key-name
+vagrant:
+  # Vagrant VM hostname prefix. This is prepended to the VM name.
+  # Example: username-issue-number
+  vm_prefix: hostname-prefix
+virtualbox:
+  add_public_network_adapter: false
