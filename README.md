@@ -1,10 +1,10 @@
 # ReadMe
 
-# Vagrant-Ubuntu
+# vagrant-ansible-linux
 
-Vagrant and Ansible scripts to spin up an Ubuntu 16.04 virtual machine.
+Vagrant and Ansible scripts to spin up a Linux virtual machine.
 
 This project depends upon the following Vagrant plugins:
 ```
-vagrant-env
+vagrant plugin install vagrant-digitalocean
 ```
