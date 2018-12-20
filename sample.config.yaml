@@ -1,15 +1,27 @@
 ---
+# Make a copy of this file and name it 'config.yaml'.
+# Set the variables in 'config.yaml'.
+
+# Git configuration for the VM.
 git:
   user_email: 'user@email.com'
   user_name: 'Git User'
   ssh_private_key_file: '\native\os\path\to\the\private\ssh\key'
+
+# DigitalOcean configuration.
+# Comment out the digitalocean variable and all its nested variables if you do not want a DigitalOcean VM.
 digitalocean:
   api_token: 12345abcde
   private_key_file: '\native\os\path\to\the\private\ssh\key'
   ssh_key_name: digitalocean-ssh-key-name
+
+# Misc Vagrant configuration items.
 vagrant:
   # Vagrant VM hostname prefix. This is prepended to the VM name.
   # Example: username-issue-number
   vm_prefix: hostname-prefix
+
+# VirtualBox configuration.
+# Comment out the virtualbox variable and all its nested variables if you do not want a VirtualBox VM.
 virtualbox:
   add_public_network_adapter: false
