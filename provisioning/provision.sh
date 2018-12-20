@@ -99,7 +99,7 @@ echo "${GIT_SSH_PRIVATE_KEY}" | base64 --decode > ${git_ssh_private_key_file}
 sudo chmod u+rw-x,go-rwx ${git_ssh_private_key_file}
 sudo chown ${VAGRANT_USER}:${VAGRANT_USER_GROUP} ${git_ssh_private_key_file}
 
-ansible_ssh_private_key_file=${vagrant_user_home_dir}/.ssh/id_ansible
+ansible_ssh_private_key_file=${vagrant_user_home_dir}/.ssh/id_rsa_ansible
 ansible_ssh_public_key_file=${ansible_ssh_private_key_file}.pub
 log ${cyan} "Creating new SSH keys for Ansible ..."
 ssh-keygen -C id_rsa_ansible -f ${ansible_ssh_private_key_file} -N ""
