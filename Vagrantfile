@@ -1,72 +1,26 @@
 require "base64"
+require "pathname"
+require "yaml"
 
 module Vagrant_Ansible_Linux
+  PROJECT_DIR = Pathname.new(__FILE__).dirname.relative_path_from(Pathname.getwd)
+  CONFIG_FILE = "config.yaml"
 
   # Vagrantfile API/syntax version. Don't change unless you know what you're doing!
   VAGRANTFILE_API_VERSION = "2"
 
-  # Return true if all of the given environment variables are set.
-  def self.are_all_env_vars_present?(env_vars)
-    env_vars.each do |env_var|
-      if !ENV.has_key? env_var
-        return false
-      end
-    end
-    return true
-  end
-
-  # Return true if any of the given environment variables are set.
-  def self.are_any_env_vars_present?(env_vars)
-    env_vars.each do |env_var|
-      if ENV.has_key? env_var
-        return true
-      end
-    end
-    return false
-  end
-
-  # Print an error message and abort if some, but not all, of the DigitalOcean environment variables are set.
-  # Return true if all of the DigitalOcean environment variables are set.
-  # Return false if none of the DigitalOcean environment variables are set.
-  def self.check_digitalocean_env_vars?()
-    check_env_vars? ["DIGITALOCEAN_API_TOKEN", "DIGITALOCEAN_SSH_KEY_NAME", "DIGITALOCEAN_PRIVATE_KEY_FILE"]
-  end
-
-  # Print an error message and abort if some, but not all, of the given environment variables are set.
-  # Return true if all of the given environment variables are set.
-  # Return false if none of the given environment variables are set.
-  def self.check_env_vars?(env_vars)
-    if are_any_env_vars_present? env_vars
-      if !are_all_env_vars_present? env_vars
-        puts "Error: Some environment variables are missing."
-        puts "Check: #{env_vars.join(", ")}"
-        puts "Either set or unset them all."
-        exit!
-      end
-      return true
-    end
-    return false
-  end
-
-  # Print an error message and abort if any of the required environment variables are missing.
-  def self.check_required_env_vars()
-    env_vars = ["GIT_USER_NAME", "GIT_USER_EMAIL", "GIT_SSH_PRIVATE_KEY_FILE", "VAGRANT_VM_PREFIX"]
-    if !are_all_env_vars_present? env_vars
-        puts "Error: Some environment variables are missing."
-        puts "Check: #{env_vars.join(", ")}"
-        exit!
-    end
-  end
-
   # Configure the build VMs.
   def self.configure
+    if !(PROJECT_DIR + CONFIG_FILE).file?
+      puts "Error: #{PROJECT_DIR + CONFIG_FILE} is missing."
+      exit!
+    end
+    @@config_vars = YAML.load_file(PROJECT_DIR + CONFIG_FILE)
     Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-      config.env.enable # Enable vagrant-env.
-      check_required_env_vars
-      if check_digitalocean_env_vars?
+      if @@config_vars.has_key? "digitalocean"
         configure_digitalocean config
       end
-      if !ignore_virtualbox?
+      if @@config_vars.has_key? "virtualbox"
         configure_virtualbox config
       end
     end
@@ -74,17 +28,17 @@ module Vagrant_Ansible_Linux
 
   # Configure the DigitalOcean build VM.
   def self.configure_digitalocean(config)
-    name = "#{ENV["VAGRANT_VM_PREFIX"]}-do"
+    name = "#{@@config_vars["vagrant"]["vm_prefix"]}-do"
     config.vm.define name, autostart: false do |sys|
       sys.vm.box = "digital_ocean"
       sys.vm.hostname = name
-      sys.ssh.private_key_path = ENV["DIGITALOCEAN_PRIVATE_KEY_FILE"]
+      sys.ssh.private_key_path = @@config_vars["digitalocean"]["private_key_file"]
       sys.vm.provider "digital_ocean" do |provider|
-        provider.token = ENV["DIGITALOCEAN_API_TOKEN"]
+        provider.token = @@config_vars["digitalocean"]["api_token"]
         provider.image = "ubuntu-18-04-x64"
         provider.region = "nyc1"
         provider.size = "4gb"
-        provider.ssh_key_name = ENV["DIGITALOCEAN_SSH_KEY_NAME"]
+        provider.ssh_key_name = @@config_vars["digitalocean"]["ssh_key_name"]
       end
       sync_folder sys, "root", "root"
       provision sys, "root", "root"
@@ -93,7 +47,7 @@ module Vagrant_Ansible_Linux
 
   # Configure the VirtualBox build VM.
   def self.configure_virtualbox(config)
-    name = "#{ENV["VAGRANT_VM_PREFIX"]}-vb"
+    name = "#{@@config_vars["vagrant"]["vm_prefix"]}-vb"
     config.vm.define name, autostart: false do |sys|
       sys.vm.box = "ubuntu/bionic64"
       sys.vm.hostname = name
@@ -103,15 +57,12 @@ module Vagrant_Ansible_Linux
         provider.gui = false
         provider.memory = 4096
       end
-      sys.vm.network "public_network", type: "dhcp"
+      if @@config_vars["virtualbox"]["add_public_network_adapter"]
+        sys.vm.network "public_network", type: "dhcp"
+      end
       sync_folder sys, "vagrant", "vagrant"
       provision sys, "vagrant", "vagrant"
     end
-  end
-
-  # Return true if the VirtualBox VM should be ignored.
-  def self.ignore_virtualbox?()
-    return ENV.has_key? "VAGRANT_IGNORE_VIRTUALBOX"
   end
 
   # Define the provisioning script and variables.
@@ -123,11 +74,11 @@ module Vagrant_Ansible_Linux
         "VAGRANT_VM_NAME" => sys.vm.hostname,
         "VAGRANT_USER" => user,
         "VAGRANT_USER_GROUP" => group,
-        "GIT_USER_NAME" => ENV["GIT_USER_NAME"],
-        "GIT_USER_EMAIL" => ENV["GIT_USER_EMAIL"]
+        "GIT_USER_NAME" => @@config_vars["git"]["user_name"],
+        "GIT_USER_EMAIL" => @@config_vars["git"]["user_email"]
       }
       git_ssh_private_key = ""
-      File.foreach(ENV["GIT_SSH_PRIVATE_KEY_FILE"]) {|line|git_ssh_private_key << line}
+      File.foreach(@@config_vars["git"]["ssh_private_key_file"]) {|line|git_ssh_private_key << line}
       shell.env["GIT_SSH_PRIVATE_KEY"] = Base64.strict_encode64(git_ssh_private_key)
     end
   end
