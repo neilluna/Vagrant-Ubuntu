@@ -2,12 +2,11 @@
 - name: Adding the apt-key ...
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
-    id: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
   become: yes
 
 - name: Adding the repository ...
   apt_repository:
-    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
   become: yes
 
 - name: Running apt-get update ...
@@ -29,6 +28,14 @@
     enabled: yes
   become: yes
 
+- name: Adding users to the Docker group ...
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  with_items: "{{ docker_users }}"
+  become: yes
+
 - name: Installing Docker Compose ...
   get_url:
     url: https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-Linux-x86_64
@@ -36,12 +43,4 @@
     group: root
     mode: u+rwx,go+rx-w
     owner: root
-  become: yes
-
-- name: Adding the Vagrant user to the Docker group ...
-  user:
-    name: "{{ item }}"
-    groups: docker
-    append: yes
-  with_items: "{{ docker_users }}"
   become: yes
