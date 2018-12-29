@@ -13,7 +13,7 @@
   - role: nodejs
   - role: docker
     vars:
-      docker_compose_version: "1.21.2"
+      docker_compose_version: "1.23.2"
       docker_users:
       - "{{ vagrant_user }}"
   - role: sqlite
