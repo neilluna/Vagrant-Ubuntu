@@ -10,6 +10,7 @@
   - role: vagrant-environment
   - role: build-essential
   - role: python3
+  - role: nodejs
   - role: docker
     vars:
       docker_compose_version: "1.23.2"
