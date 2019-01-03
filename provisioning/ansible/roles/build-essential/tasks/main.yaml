@@ -1,6 +1,6 @@
 ---
 - name: Installing ...
   apt:
-    name: git
+    name: build-essential
     state: latest
   become: yes

@@ -1,0 +1,12 @@
+---
+- name: Installing ...
+  apt:
+    name: nodejs
+    state: latest
+  become: yes
+
+- name: Installing npm ...
+  apt:
+    name: npm
+    state: latest
+  become: yes

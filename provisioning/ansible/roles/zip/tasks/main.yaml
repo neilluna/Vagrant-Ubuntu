@@ -1,6 +1,6 @@
 ---
 - name: Installing ...
   apt:
-    name: git
+    name: zip
     state: latest
   become: yes

@@ -11,6 +11,24 @@ cyan='\e[36m'
 white='\e[37m'
 reset='\e[0m'
 
+function add_self_to_known_hosts()
+{
+  user=${1}
+  users_home_dir=$(eval echo ~${1})
+  users_known_hosts_file=${users_home_dir}/.ssh/known_hosts
+  if [ ! -f ${users_known_hosts_file} ]; then
+    log ${cyan} "Creating ${users_known_hosts_file} ..."
+    sudo touch ${users_known_hosts_file}
+    sudo chmod u+rw-x,go+r-wx ${users_known_hosts_file}
+    sudo chown ${user}:${user} ${users_known_hosts_file}
+  fi
+  ssh-keygen -F 127.0.0.1 -f ${users_known_hosts_file} > /dev/null 2>&1
+  if [ ${?} -ne 0 ]; then
+    log ${cyan} "Adding the VM's SSH fingerprint to ${users_known_hosts_file} ..."
+    ssh-keyscan -H 127.0.0.1 >> ${users_known_hosts_file}
+  fi
+}
+
 # Using ANSI escape codes for color works, yet tput does not.
 # This may be caused by tput not being able to determine the terminal type.
 function log()
@@ -40,7 +58,7 @@ function retry_if_fail()
   fi
 }
 
-set_permissions_script=/vagrant/provisioning/set-permissions.sh
+set_permissions_script=/vagrant/bin.vm-only/set-permissions.sh
 log ${cyan} "Running ${set_permissions_script} ..."
 chmod u+rwx,go+rx-w ${set_permissions_script}
 ${set_permissions_script}
@@ -70,7 +88,16 @@ retry_if_fail sudo apt-get update
 log ${cyan} "Installing Ansible ..."
 retry_if_fail sudo apt-get -y install ansible
 
+add_self_to_known_hosts $(whoami)
+add_self_to_known_hosts ${VAGRANT_USER}
+
 vagrant_user_home_dir=$(eval echo ~${VAGRANT_USER})
+
+git_ssh_private_key_file=${vagrant_user_home_dir}/.ssh/id_git
+log ${cyan} "Saving the Git SSH private key ..."
+echo "${GIT_SSH_PRIVATE_KEY}" | base64 --decode > ${git_ssh_private_key_file}
+sudo chmod u+rw-x,go-rwx ${git_ssh_private_key_file}
+sudo chown ${VAGRANT_USER}:${VAGRANT_USER_GROUP} ${git_ssh_private_key_file}
 
 ansible_ssh_private_key_file=${vagrant_user_home_dir}/.ssh/id_rsa_ansible
 ansible_ssh_public_key_file=${ansible_ssh_private_key_file}.pub
@@ -139,9 +166,33 @@ EOF3
 sudo chmod u+rwx,go+rx-w ${ansible_vars_script}
 sudo chown root:root ${ansible_vars_script}
 
+git_vars_script=${provisioning_information_dir}/git-vars.sh
+log ${cyan} "Creating ${git_vars_script} ..."
+cat << EOF4 > ${git_vars_script}
+#!/usr/bin/env bash
+
+# Keep this script idempotent. It will probably be called multiple times.
+
+export GIT_SSH_COMMAND='ssh -i ${git_ssh_private_key_file}'
+
+EOF4
+sudo chmod u+rwx,go+rx-w ${git_vars_script}
+sudo chown root:root ${git_vars_script}
+
+git_vars_yaml=${provisioning_information_dir}/git-vars.yaml
+log ${cyan} "Creating ${git_vars_yaml} ..."
+cat << EOF5 > ${git_vars_yaml}
+---
+git_user_name: ${GIT_USER_NAME}
+git_user_email: ${GIT_USER_EMAIL}
+
+EOF5
+sudo chmod u+rw-x,go+r-wx ${git_vars_yaml}
+sudo chown root:root ${git_vars_yaml}
+
 vagrant_vars_script=${provisioning_information_dir}/vagrant-vars.sh
 log ${cyan} "Creating ${vagrant_vars_script} ..."
-cat << EOF4 > ${vagrant_vars_script}
+cat << EOF6 > ${vagrant_vars_script}
 #!/usr/bin/env bash
 
 # Keep this script idempotent. It will probably be called multiple times.
@@ -150,28 +201,26 @@ export VAGRANT_VM_NAME=${VAGRANT_VM_NAME}
 export VAGRANT_USER=${VAGRANT_USER}
 export VAGRANT_USER_GROUP=${VAGRANT_USER_GROUP}
 
-EOF4
+EOF6
 sudo chmod u+rwx,go+rx-w ${vagrant_vars_script}
 sudo chown root:root ${vagrant_vars_script}
 
 vagrant_vars_yaml=${provisioning_information_dir}/vagrant-vars.yaml
 log ${cyan} "Creating ${vagrant_vars_yaml} ..."
-cat << EOF5 > ${vagrant_vars_yaml}
+cat << EOF7 > ${vagrant_vars_yaml}
 ---
 vagrant_vm_name: ${VAGRANT_VM_NAME}
 vagrant_user: ${VAGRANT_USER}
 vagrant_user_group: ${VAGRANT_USER_GROUP}
 
-EOF5
+EOF7
 sudo chmod u+rw-x,go+r-wx ${vagrant_vars_yaml}
 sudo chown root:root ${vagrant_vars_yaml}
 
 log ${cyan} "Sourcing ${ansible_vars_script} ..."
 source ${ansible_vars_script}
 
-export ANSIBLE_HOST_KEY_CHECKING=False
-
-ansible_playbook=/vagrant/provisioning/ansible/ansible-playbook.yaml
+ansible_playbook=/vagrant/provisioning/ansible/provision-self.yaml
 log ${cyan} "Playing ${ansible_playbook} ..."
 ansible-playbook ${ansible_playbook} || exit 1
 
