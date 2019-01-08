@@ -17,10 +17,10 @@ module Vagrant_Ansible_Linux
     end
     @@config_vars = YAML.load_file(PROJECT_DIR + CONFIG_FILE)
     Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-      if @@config_vars.has_key? "digitalocean"
+      if @@config_vars["digitalocean"]["include_configuration"]
         configure_digitalocean config
       end
-      if @@config_vars.has_key? "virtualbox"
+      if @@config_vars["virtualbox"]["include_configuration"]
         configure_virtualbox config
       end
     end
@@ -73,13 +73,16 @@ module Vagrant_Ansible_Linux
       shell.env = {
         "VAGRANT_VM_NAME" => sys.vm.hostname,
         "VAGRANT_USER" => user,
-        "VAGRANT_USER_GROUP" => group,
-        "GIT_USER_NAME" => @@config_vars["git"]["user_name"],
-        "GIT_USER_EMAIL" => @@config_vars["git"]["user_email"]
+        "VAGRANT_USER_GROUP" => group
       }
-      git_ssh_private_key = ""
-      File.foreach(@@config_vars["git"]["ssh_private_key_file"]) {|line|git_ssh_private_key << line}
-      shell.env["GIT_SSH_PRIVATE_KEY"] = Base64.strict_encode64(git_ssh_private_key)
+      if @@config_vars["git"]["provision_environment"]
+        shell.env["PROVISION_GIT_ENVIRONMENT"] = "true"
+        shell.env["GIT_USER_NAME"] = @@config_vars["git"]["user_name"]
+        shell.env["GIT_USER_EMAIL"] = @@config_vars["git"]["user_email"]
+        git_ssh_private_key = ""
+        File.foreach(@@config_vars["git"]["ssh_private_key_file"]) {|line|git_ssh_private_key << line}
+        shell.env["GIT_SSH_PRIVATE_KEY"] = Base64.strict_encode64(git_ssh_private_key)
+      end
     end
   end
 

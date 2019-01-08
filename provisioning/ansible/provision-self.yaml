@@ -7,6 +7,7 @@
   - role: dist-upgrade
   - role: ansible-environment
   - role: git-environment
+    when: provision_git_environment
   - role: vagrant-environment
   - role: build-essential
   - role: python3
