@@ -20,9 +20,8 @@
   - role: virtualenv
   - role: virtualenvwrapper
   - role: pipenv
-  # - role: awscli
+  - role: awscli
   #   vars:
-  #     virtual-env-name: "aws"
   #     aws_access_key_id: "{{ aws_access_key_id }}"
   #     aws_secret_access_key: "{{ aws_secret_access_key }}"
   #   when: provision_aws_environment

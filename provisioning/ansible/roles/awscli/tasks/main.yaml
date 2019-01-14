@@ -1,0 +1,12 @@
+---
+- name: Creating the project directory ...
+  file:
+    path: ~/awscli
+    state: directory
+    mode: u+rwx,go+rx-w
+
+- name: Creating the virtual environment ...
+  shell: bash -c "PIPENV_VENV_IN_PROJECT=1 pipenv install awscli"
+  args:
+    chdir: ~/awscli
+    creates: ~/awscli/.venv
