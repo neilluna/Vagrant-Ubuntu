@@ -5,7 +5,7 @@
     dest: ~/nvm_install.sh
     mode: u+rwx,go+rx-w
 
-    - name: Installing ...
+- name: Installing ...
   shell: ~/nvm_install.sh
   args:
     creates: ~/.nvm/nvm.sh
