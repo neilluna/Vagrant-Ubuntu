@@ -1,0 +1,4 @@
+---
+- name: Installing environment ...
+  listen: "bash-environment updated"
+  shell: ~/bash-environment/install.sh --python3-virtualenv

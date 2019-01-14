@@ -11,7 +11,8 @@ This project will allow you to create and manage a Virtual Machine running Ubunt
 - docker
 - git
 - nodejs
-- python 3
+- python 2 and pip 2
+- python 3 and pip 3
 - sglite
 - Misc other tools
 

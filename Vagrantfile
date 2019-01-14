@@ -75,6 +75,11 @@ module Vagrant_Ansible_Linux
         "VAGRANT_USER" => user,
         "VAGRANT_USER_GROUP" => group
       }
+      if @@config_vars["aws_user"]["provision_environment"]
+        shell.env["PROVISION_AWS_ENVIRONMENT"] = "true"
+        shell.env["AWS_ACCESS_KEY_ID"] = @@config_vars["aws_user"]["access_key_id"]
+        shell.env["AWS_SECRET_ACCESS_KEY"] = @@config_vars["aws_user"]["secret_access_key"]
+      end
       if @@config_vars["git"]["provision_environment"]
         shell.env["PROVISION_GIT_ENVIRONMENT"] = "true"
         shell.env["GIT_USER_NAME"] = @@config_vars["git"]["user_name"]

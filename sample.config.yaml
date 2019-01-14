@@ -2,6 +2,13 @@
 # Make a copy of this file and name it 'config.yaml'.
 # Set the variables in 'config.yaml'.
 
+# AWS user configuration for the VM.
+# Set "provision_environment" to true if you want the host's AWS user configuration configured on the VM.
+aws_user:
+  provision_environment: false
+  access_key_id: 12345abcde
+  secret_access_key: 12345abcde
+
 # Git configuration for the VM.
 # Set "provision_environment" to true if you want the host's Git environment configured on the VM.
 git:
