@@ -21,10 +21,10 @@
   - role: virtualenvwrapper
   - role: pipenv
   - role: awscli
-  #   vars:
-  #     aws_access_key_id: "{{ aws_access_key_id }}"
-  #     aws_secret_access_key: "{{ aws_secret_access_key }}"
-  #   when: provision_aws_environment
+    vars:
+      aws_access_key_id: "{{ aws_access_key_id }}"
+      aws_secret_access_key: "{{ aws_secret_access_key }}"
+    when: provision_aws_environment
   - role: nvm
   - role: nodejs
   - role: docker
