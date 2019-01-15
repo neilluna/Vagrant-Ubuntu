@@ -2,4 +2,4 @@
 
 # Keep this script idempotent. It will probably be called multiple times.
 
-source /etc/provisioning/vagrant-vars.sh
+export export PIPENV_VENV_IN_PROJECT=1

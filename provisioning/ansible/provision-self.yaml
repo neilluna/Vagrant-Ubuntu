@@ -1,15 +1,32 @@
 ---
 - hosts: self
-  vars_files:
-  - /etc/provisioning/git-vars.yaml
-  - /etc/provisioning/vagrant-vars.yaml
   roles:
-  - role: dist-upgrade
+  # - role: dist-upgrade
+  - role: git
+  - role: bash-environment
   - role: ansible-environment
   - role: git-environment
-  - role: vagrant-environment
+    when: provision_git_environment
+  - role: git-configuration
+    vars:
+      git_user_name: "{{ git_user_name }}"
+      git_user_email: "{{ git_user_email }}"
+    when: provision_git_environment
   - role: build-essential
+  - role: python2
+  - role: pip2
   - role: python3
+  - role: pip3
+  - role: virtualenv
+  - role: virtualenvwrapper
+  - role: pipenv
+  - role: awscli
+  - role: awscli-environment
+    vars:
+      aws_access_key_id: "{{ aws_access_key_id }}"
+      aws_secret_access_key: "{{ aws_secret_access_key }}"
+    when: provision_aws_environment
+  - role: nvm
   - role: nodejs
   - role: docker
     vars:

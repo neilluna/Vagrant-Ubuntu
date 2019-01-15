@@ -20,6 +20,7 @@
     mode: u+x
   when: bash_environment_clone.before != bash_environment_clone.after
 
-- name: Installing ...
-  shell: ~/bash-environment/install.sh -v > ~/bash-environment/install.log 2>&1
+- name: Installing environment ...
+  shell: ~/bash-environment/install.sh
+  notify: "bash-environment updated"
   when: bash_environment_clone.before != bash_environment_clone.after
