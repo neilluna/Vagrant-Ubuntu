@@ -25,7 +25,6 @@ In order to use this project, you must have the following:
 - VirtualBox installed.
 - Vagrant installed.
 - Bash. You can use Cygwin on Windows.
-- Python 3. You can use the Cygwin version of Python 3 on Windows.
 - A DigitalOcean account and API token, if you are creating the VM on DigitalOcean.
 
 Once Vagrant is installed, please install the following Vagrant plugins if you plan to use DigitalOcean VMs.
