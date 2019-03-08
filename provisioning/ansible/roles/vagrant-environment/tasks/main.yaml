@@ -1,6 +1,0 @@
----
-- name: Installing ...
-  copy:
-    src: .bashrc.d/vagrant-vars.sh
-    dest: ~/.bashrc.d/vagrant-vars.sh
-    mode: u+x
