@@ -13,7 +13,7 @@ This project will allow you to create and manage a Virtual Machine running Ubunt
 - nodejs
 - Python 2 and pip 2
 - Python 3 and pip 3
-- virtualenv, virtualenvwrappeer, and pipenv (using Python 3)
+- virtualenv, virtualenvwrappeer, and pipenv (using pip 3)
 - AWS CLI (in a pipenv environment using Python 3). Optionally, the developer's AWS default configuration and credentials on the host can be replicated on the VM.
 - NVM, NodeJS (installed local using NVM), and NPM
 - Docker
@@ -26,8 +26,7 @@ In order to use this project, you must have the following:
 - Vagrant installed.
 - Bash. You can use Cygwin on Windows.
 - Python 3. You can use the Cygwin version of Python 3 on Windows.
-- A DigitalOcean account, if you are creating the VM on DigitalOcean.
-- A DigitalOcean API token, if you are creating the VM on DigitalOcean.
+- A DigitalOcean account and API token, if you are creating the VM on DigitalOcean.
 
 Once Vagrant is installed, please install the following Vagrant plugins if you plan to use DigitalOcean VMs.
 ```
