@@ -27,9 +27,14 @@
       aws_secret_access_key: "{{ aws_secret_access_key }}"
     when: provision_aws_environment
   - role: nvm
+    vars:
+      nvm_version: "0.34.0"
   - role: nodejs
+    vars:
+      nodejs_version: "8.10"
   - role: docker
     vars:
+      docker_compose_version: "1.23.2"
       docker_users:
       - "{{ vagrant_user }}"
   - role: sqlite

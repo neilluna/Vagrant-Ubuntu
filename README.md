@@ -29,7 +29,6 @@ In order to use this project, you must have the following:
 
 Once Vagrant is installed, please install the following Vagrant plugins if you plan to use DigitalOcean VMs.
 ```
-vagrant plugin install --plugin-version 1.0.1 fog-ovirt
 vagrant plugin install vagrant-digitalocean
 ```
 
