@@ -9,13 +9,12 @@ script_name=$(basename ${BASH_SOURCE[0]})
 
 echo_usage() {
   echo "This script will one-way synchronize the project directory to or from a VM."
-  echo "If the project directory is synchronized to the VM, the 'set-permissions.sh'"
-  echo "script will be run on the VM."
   echo
-  echo "Usage: ${script_name} [-h] [-d] [-r] [-v] -t target-vm-name"
+  echo "Usage: ${script_name} [-h] [-d] [-p] [-r] [-v] -t target-vm-name"
   echo
   echo "  -h  Show this help information."
   echo "  -d  Delete remote files which do not exist locally."
+  echo "  -p  Run the 'set-permissions.sh' scripts on the VM after the sync."
   echo "  -r  Reverse. Sync is done from the VM to the host. Note: The"
   echo "      'set-permissions.sh' script will not be run."
   echo "  -t  The target VM name. This is required."
@@ -25,11 +24,12 @@ echo_usage() {
 }
 
 opt_delete=no
+opt_permissions=no
 opt_reverse=no
 opt_target=
 opt_verbose=no
 
-while getopts ":hdrt:v" opt; do
+while getopts ":hdprt:v" opt; do
   case "${opt}" in
     h)
       echo_usage
@@ -37,6 +37,9 @@ while getopts ":hdrt:v" opt; do
       ;;
     d)
       opt_delete=yes
+      ;;
+    p)
+      opt_permissions=yes
       ;;
     r)
       opt_reverse=yes
@@ -131,9 +134,11 @@ user_at_host=${ssh_config_User}@${ssh_config_HostName}
 if [ ${opt_reverse} == no ]; then
   echo "Syncing host to ${opt_target} ..."
   rsync ${common_rsync_args} ${push_rsync_args} . ${user_at_host}:/vagrant || cleanup_and_exit 1
-  echo "Setting permissions on ${opt_target} ..."
-  ${RSYNC_RSH} ${user_at_host} 'chmod u+rwx,go+rx-w /vagrant/bin.vm-only/set-permissions.sh' || cleanup_and_exit 1
-  ${RSYNC_RSH} ${user_at_host} '/vagrant/bin.vm-only/set-permissions.sh' || cleanup_and_exit 1
+	if [ ${opt_permissions} == yes ]; then
+		echo "Setting permissions on ${opt_target} ..."
+		${RSYNC_RSH} ${user_at_host} 'chmod u+rwx,go+rx-w /vagrant/bin.vm-only/set-permissions.sh' || cleanup_and_exit 1
+		${RSYNC_RSH} ${user_at_host} '/vagrant/bin.vm-only/set-permissions.sh' || cleanup_and_exit 1
+	fi
 else
   echo "Syncing ${opt_target} to host ..."
   rsync ${common_rsync_args} ${pull_rsync_args} ${user_at_host}:/vagrant/ . || cleanup_and_exit 1
