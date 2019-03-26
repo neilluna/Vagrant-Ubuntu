@@ -1,5 +1,5 @@
-/.git/
-/.gitignore
+.git/
+.gitignore
 /.vagrant/
 /config.yaml
 /ubuntu-bionic-18.04-cloudimg-console.log
