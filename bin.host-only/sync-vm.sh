@@ -122,11 +122,11 @@ elif [ ! -z "$(uname -s | grep -i mingw32)" ]; then
 fi
 
 export RSYNC_RSH="ssh \
-	-i ${ssh_config_IdentityFile} \
-	-p ${ssh_config_Port} \
-	-o LogLevel=ERROR \
-	-o StrictHostKeyChecking=no \
-	-o UserKnownHostsFile=/dev/null"
+  -i ${ssh_config_IdentityFile} \
+  -p ${ssh_config_Port} \
+  -o LogLevel=ERROR \
+  -o StrictHostKeyChecking=no \
+  -o UserKnownHostsFile=/dev/null"
 
 user_at_host=${ssh_config_User}@${ssh_config_HostName}
 
