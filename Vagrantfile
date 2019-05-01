@@ -4,18 +4,18 @@ require "yaml"
 
 module Vagrant_Ansible_Linux
   PROJECT_DIR = Pathname.new(__FILE__).dirname.relative_path_from(Pathname.getwd)
-  CONFIG_FILE = "config.yaml"
+  CONFIG_FILE = PROJECT_DIR + "config.yaml"
 
   # Vagrantfile API/syntax version. Don't change unless you know what you're doing!
   VAGRANTFILE_API_VERSION = "2"
 
   # Configure the build VMs.
   def self.configure
-    if !(PROJECT_DIR + CONFIG_FILE).file?
-      puts "Error: #{PROJECT_DIR + CONFIG_FILE} is missing."
+    if !(CONFIG_FILE).file?
+      puts "Error: #{CONFIG_FILE} is missing."
       exit!
     end
-    @@config_vars = YAML.load_file(PROJECT_DIR + CONFIG_FILE)
+    @@config_vars = YAML.load_file(CONFIG_FILE)
     Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if @@config_vars["digitalocean"]["include_configuration"]
         configure_digitalocean config
