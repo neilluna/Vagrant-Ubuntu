@@ -1,7 +1,8 @@
 ---
 - hosts: self
   roles:
-  # - role: dist-upgrade
+  - role: update
+  - role: upgrade
   - role: git
   - role: bash-environment
   - role: ansible-environment
