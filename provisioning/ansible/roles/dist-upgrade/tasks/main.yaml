@@ -1,5 +1,0 @@
----
-- name: Running apt-get dist-upgrade ...
-  apt:
-    upgrade: dist
-  become: yes
