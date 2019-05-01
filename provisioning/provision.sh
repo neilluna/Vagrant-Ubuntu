@@ -74,10 +74,16 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 
 log ${cyan} "Running apt-get update ..."
-retry_if_fail apt-get update
+retry_if_fail apt-get update --yes
+
+log ${cyan} "Running apt-get upgrade ..."
+retry_if_fail apt-get upgrade --yes
+
+log ${cyan} "Installing software-properties-common ..."
+retry_if_fail apt-get install software-properties-common --yes
 
 log ${cyan} "Installing Python3 and pip3 ..."
-retry_if_fail apt-get -y install python3 python3-pip
+retry_if_fail apt-get install python3 python3-pip --yes
 
 log ${cyan} "Installing Ansible ..."
 retry_if_fail pip3 install ansible
