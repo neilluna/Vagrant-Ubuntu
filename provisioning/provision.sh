@@ -79,6 +79,9 @@ retry_if_fail apt-get update --yes
 log ${cyan} "Running apt-get upgrade ..."
 retry_if_fail apt-get upgrade --yes
 
+log ${cyan} "Installing aptitude ..."
+retry_if_fail apt-get install aptitude --yes
+
 log ${cyan} "Installing software-properties-common ..."
 retry_if_fail apt-get install software-properties-common --yes
 

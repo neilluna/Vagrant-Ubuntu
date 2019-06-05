@@ -10,7 +10,7 @@
     name: core.filemode
     repo: ~/bash-environment
     scope: local
-    value: false
+    value: 'false'
   when: bash_environment_clone.before != bash_environment_clone.after
 
 - name: Making install.sh executable ...

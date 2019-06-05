@@ -7,12 +7,12 @@
   - role: bash-environment
   - role: ansible-environment
   - role: git-environment
-    when: provision_git_environment
+    when: provision_git_environment == true
   - role: git-configuration
     vars:
       git_user_name: "{{ git_user_name }}"
       git_user_email: "{{ git_user_email }}"
-    when: provision_git_environment
+    when: provision_git_environment == true
   - role: build-essential
   - role: python2
   - role: pip2
@@ -26,7 +26,7 @@
     vars:
       aws_access_key_id: "{{ aws_access_key_id }}"
       aws_secret_access_key: "{{ aws_secret_access_key }}"
-    when: provision_aws_environment
+    when: provision_aws_environment == true
   - role: nvm
     vars:
       nvm_version: "0.34.0"
