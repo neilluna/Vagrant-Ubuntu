@@ -2,7 +2,7 @@ require "base64"
 require "pathname"
 require "yaml"
 
-module Vagrant_Ansible_Linux
+module Vagrant_Dev_Sys
   PROJECT_DIR = Pathname.new(__FILE__).dirname.relative_path_from(Pathname.getwd)
   CONFIG_FILE = PROJECT_DIR + "config.yaml"
 
@@ -106,4 +106,4 @@ module Vagrant_Ansible_Linux
 
 end
 
-Vagrant_Ansible_Linux.configure
+Vagrant_Dev_Sys.configure

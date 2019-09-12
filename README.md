@@ -1,6 +1,6 @@
 # ReadMe
 
-## vagrant-ansible-linux
+## vagrant-dev-sys
 
 Vagrant and Ansible scripts to spin up a Linux virtual machine.
 
