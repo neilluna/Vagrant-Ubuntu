@@ -85,8 +85,11 @@ retry_if_fail apt-get install aptitude --yes
 log ${cyan} "Installing software-properties-common ..."
 retry_if_fail apt-get install software-properties-common --yes
 
-log ${cyan} "Installing Python3 and pip3 ..."
-retry_if_fail apt-get install python3 python3-pip --yes
+log ${cyan} "Installing Python3 ..."
+retry_if_fail apt-get install python3 --yes
+
+log ${cyan} "Installing pip3 ..."
+retry_if_fail apt-get install python3-pip --yes
 
 log ${cyan} "Installing Ansible ..."
 retry_if_fail pip3 install ansible
@@ -245,10 +248,26 @@ source ${ansible_vars_script}
 ansible_playbook=/vagrant/provisioning/ansible/provision-self.yaml
 log ${cyan} "Playing ${ansible_playbook} ..."
 
+ansible_play_script=${provisioning_information_dir}/ansible-play.sh
+log ${cyan} "Creating ${ansible_play_script} ..."
+cat << EOF10 > ${ansible_play_script}
+#!/usr/bin/env bash
+
+# Keep this script idempotent. It will probably be called multiple times.
+
 ansible-playbook \
 	--extra-vars "@${aws_vars_yaml}" \
 	--extra-vars "@${git_vars_yaml}" \
 	--extra-vars "@${vagrant_vars_yaml}" \
 	${ansible_playbook} || exit 1
+
+exit 0
+
+EOF10
+chmod u+rwx,go-rwx ${ansible_play_script}
+chown ${VAGRANT_USER}:${VAGRANT_USER_GROUP} ${ansible_play_script}
+
+log ${cyan} "Running ${ansible_play_script} ..."
+${ansible_play_script} || exit 1
 
 exit 0
