@@ -1,0 +1,42 @@
+---
+# Make a copy of this file and name it 'config.yaml'.
+# Set the variables in 'config.yaml'.
+
+# AWS configuration.
+# Set "enable" to true if you want an AWS EC2 configuration.
+aws:
+  enable: false
+  access_key_id: '12345abcde'
+  secret_access_key: '12345abcde'
+
+# DigitalOcean configuration.
+# Set "enable" to true if you want a DigitalOcean VM configuration.
+digitalocean:
+  enable: false
+  api_token: '12345abcde'
+  private_key_file: '\native\os\path\to\the\private\ssh\key'
+  ssh_key_name: 'digitalocean-ssh-key-name'
+  image: 'ubuntu-18-04-x64'
+  region: 'nyc1'
+  size: '4gb'
+
+# Git configuration for the VM.
+# Set "enable" to true if you want the host's Git environment configured on the VM.
+git:
+  enable: false
+  user_email: 'user@email.com'
+  user_name: 'First Last'
+  ssh_private_key_file: '\native\os\path\to\the\private\ssh\key'
+
+# Misc Vagrant configuration items.
+vagrant:
+  # Vagrant VM hostname prefix. This is prepended to the VM name.
+  # Example: username-issue-number
+  vm_prefix: 'hostname-prefix'
+
+# VirtualBox configuration.
+# Set "enable" to true if you want a VirtualBox VM configuration.
+virtualbox:
+  enable: true
+  add_public_network_adapter: true
+  update_guest_additions: false
