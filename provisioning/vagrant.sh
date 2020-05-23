@@ -4,6 +4,7 @@ script_version=1.0.0
 
 script_name=$(basename ${BASH_SOURCE[0]})
 script_dir=$(dirname ${BASH_SOURCE[0]})
+script_path=${BASH_SOURCE[0]}
 
 function echo_usage()
 {
@@ -11,10 +12,11 @@ function echo_usage()
 	echo ""
 	echo "Provision a VirtualBox virtual machine."
 	echo ""
-	echo "Usage: ${script_name} [options]"
+	echo "Usage: ${script_name} [options] [playbook_name]"
 	echo ""
-	echo "  -h, --help     Output this help information and exit successfully."
-	echo "      --version  Output the version and exit successfully."
+	echo "  -h, --help     Output this help information."
+	echo "  -v, --verbose  Verbose output."
+	echo "      --version  Output the version."
 }
 
 # ANSI color escape sequences for use in echo_color().
@@ -113,12 +115,16 @@ function add_localhost_to_known_hosts_for_user()
 }
 
 # Provision directory and file modes. Keeps things private.
-PROVISIONING_DIR_MODE=u+rwx,go-rwx
-PROVISIONING_FILE_MODE=u+rw-x,go-rwx
-PROVISIONING_SCRIPT_MODE=u+rwx,go-rwx
+ASSET_DIR_MODE=u+rwx,go-rwx
+ASSET_FILE_MODE=u+rw-x,go-rwx
+ASSET_SCRIPT_MODE=u+rwx,go-rwx
 
 # Make installations non-interactive.
 export DEBIAN_FRONTEND=noninteractive
+
+# Command-line switch variables.
+playbook_name=
+verbose=no
 
 # NOTE: This requires GNU getopt. On Mac OS X and FreeBSD, you have to install this separately.
 ARGS=$(getopt -o h -l help,version -n ${script_name} -- "${@}")
@@ -136,6 +142,10 @@ while true; do
 			echo_usage
 			exit 0
 			;;
+		-v | --verbose)
+			verbose=yes
+			shift
+			;;
 		--version)
 			echo "${script_version}"
 			exit 0
@@ -146,135 +156,110 @@ while true; do
 			;;
 	esac
 done
+while [ ${#} -gt 0 ]; do
+	if [ -z "${playbook_name}" ]; then
+		playbook_name=${1}
+	else
+		echo "${script_name}: Error: Invalid argument: ${1}" >&2
+		echo_usage
+		exit 1
+	fi
+	shift
+done
+if [ -z "${playbook_name}" ]; then
+	playbook_name=common
+fi
 
-echo_color ${cyan} "Script: '${script_name}', Script directory: '${script_dir}'"
-echo_color ${cyan} "Current user: '$(whoami)', Home directory: '${HOME}', Current directory: '$(pwd)'"
+echo_color ${cyan} "Script: '${script_path}', playbook: '${playbook_name}'"
+echo_color ${cyan} "Current user: '$(whoami)', home: '${HOME}'"
+echo_color ${cyan} "Current directory: '$(pwd)'"
 
 dev_user_home_dir=$(eval echo ~${DEV_SYS_USER})
-echo_color ${cyan} "dev-sys user: '${DEV_SYS_USER}', Home directory: '${dev_user_home_dir}'"
+echo_color ${cyan} "DEV_SYS user: '${DEV_SYS_USER}', group: '${DEV_SYS_GROUP}', home: '${dev_user_home_dir}'"
 
-# Create the provisioning directory.
-# This is where dev-sys files and configuration from the host will be stored.
-provisioning_dir=${dev_user_home_dir}/.dev-sys-provisioning
-create_dir_with_mode_user_group ${PROVISIONING_DIR_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${provisioning_dir}
+# Create the provisioning assets directory.
+assets_dir=${dev_user_home_dir}/.dev-sys
+create_dir_with_mode_user_group ${ASSET_DIR_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${assets_dir}
 
-aws_provisioning_dir=${provisioning_dir}/aws
-
-# If DEV_SYS_AWS_CONFIG is specifed, create the AWS config file from it.
-if [ ! -z "${DEV_SYS_AWS_CONFIG}" ]; then
-	create_dir_with_mode_user_group ${PROVISIONING_DIR_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${aws_provisioning_dir}
-	aws_config_file=${aws_provisioning_dir}/config
-	echo_color ${cyan} "Creating ${aws_config_file} ..."
-	echo "${DEV_SYS_AWS_CONFIG}" | base64 --decode > ${aws_config_file}
-	set_mode_user_group ${PROVISIONING_FILE_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${aws_config_file}
+# If ANSIBLE_DEV_SYS_DIR is not defined, set it to a default.
+if [ -z "${ANSIBLE_DEV_SYS_DIR}" ]; then
+	ANSIBLE_DEV_SYS_DIR=${assets_dir}/ansible-dev-sys
 fi
 
-# If DEV_SYS_AWS_CREDENTIALS is specifed, create the AWS credentials file from it.
-if [ ! -z "${DEV_SYS_AWS_CREDENTIALS}" ]; then
-	create_dir_with_mode_user_group ${PROVISIONING_DIR_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${aws_provisioning_dir}
-	aws_credentials_file=${aws_provisioning_dir}/credentials
-	echo_color ${cyan} "Creating ${aws_credentials_file} ..."
-	echo "${DEV_SYS_AWS_CREDENTIALS}" | base64 --decode > ${aws_credentials_file}
-	set_mode_user_group ${PROVISIONING_FILE_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${aws_credentials_file}
+# Save ANSIBLE_DEV_SYS_DIR into a script for later use.
+ansible_dev_sys_dir_script=${assets_dir}/ansible-dev-sys-dir.sh
+echo_color ${cyan} "Creating ${ansible_dev_sys_dir_script} ..."
+cat <<-EOF > ${ansible_dev_sys_dir_script}
+#!/usr/bin/env bash
+ANSIBLE_DEV_SYS_DIR=${ANSIBLE_DEV_SYS_DIR}
+EOF
+set_mode_user_group ${ASSET_SCRIPT_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${ansible_dev_sys_dir_script}
+
+# If BASH_ENVIRONMENT_DIR is not defined, set it to a default.
+if [ -z "${BASH_ENVIRONMENT_DIR}" ]; then
+	BASH_ENVIRONMENT_DIR=${assets_dir}/bash-environment
 fi
 
-git_provisioning_dir=${provisioning_dir}/git
+# Save BASH_ENVIRONMENT_DIR into a script for later use.
+bash_environment_dir_script=${assets_dir}/bash-environment-dir.sh
+echo_color ${cyan} "Creating ${bash_environment_dir_script} ..."
+cat <<-EOF > ${bash_environment_dir_script}
+#!/usr/bin/env bash
+BASH_ENVIRONMENT_DIR=${BASH_ENVIRONMENT_DIR}
+EOF
+set_mode_user_group ${ASSET_SCRIPT_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${bash_environment_dir_script}
 
-# If DEV_SYS_ANSIBLE_DEV_SYS_BRANCH is specifed, save it into a config file.
-if [ ! -z "${DEV_SYS_ANSIBLE_DEV_SYS_BRANCH}" ]; then
-	create_dir_with_mode_user_group ${PROVISIONING_DIR_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${git_provisioning_dir}
-	ansible_dev_sys_script=${git_provisioning_dir}/ansible-dev-sys.sh
-	echo_color ${cyan} "Creating ${ansible_dev_sys_script} ..."
-	cat <<-EOF > ${ansible_dev_sys_script}
-	#!/usr/bin/env bash
-	export DEV_SYS_ANSIBLE_DEV_SYS_BRANCH=${DEV_SYS_ANSIBLE_DEV_SYS_BRANCH}
-	EOF
-	set_mode_user_group ${PROVISIONING_SCRIPT_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${ansible_dev_sys_script}
+# If ansible-dev-sys does not exist ...
+if [ ! -d ${ANSIBLE_DEV_SYS_DIR} ]; then
+	# Temporarily clone ansible-dev-sys.
+	ansible_dev_sys_url=https://github.com/neilluna/ansible-dev-sys.git
+	echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${ANSIBLE_DEV_SYS_DIR} ..."
+	retry_if_fail git clone ${ansible_dev_sys_url} ${ANSIBLE_DEV_SYS_DIR} || exit 1
+	cd ${ANSIBLE_DEV_SYS_DIR}
+	git config core.filemode false
+
+	# Get a temporary copy of dev-sys.sh from the temporary ansible-dev-sys.
+	dev_sys_script=${ANSIBLE_DEV_SYS_DIR}/dev-sys.sh
+	tmp_dev_sys_script=${assets_dir}/dev-sys.sh
+	echo_color ${cyan} "Copying ${dev_sys_script} to ${tmp_dev_sys_script} ..."
+	cp -f ${dev_sys_script} ${tmp_dev_sys_script}
+	dev_sys_script=${tmp_dev_sys_script}
+
+	# Remove the temporarily ansible-dev-sys.
+	echo_color ${cyan} "Removing ${ANSIBLE_DEV_SYS_DIR} ..."
+	rm -rf ${ANSIBLE_DEV_SYS_DIR}
+else
+	dev_sys_script=${ANSIBLE_DEV_SYS_DIR}/dev-sys.sh
 fi
-
-# If DEV_SYS_BASH_ENVIRONMENT_BRANCH is specifed, save it into a config file.
-if [ ! -z "${DEV_SYS_BASH_ENVIRONMENT_BRANCH}" ]; then
-	create_dir_with_mode_user_group ${PROVISIONING_DIR_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${git_provisioning_dir}
-	bash_environment_script=${git_provisioning_dir}/bash-environment.sh
-	echo_color ${cyan} "Creating ${bash_environment_script} ..."
-	cat <<-EOF > ${bash_environment_script}
-	#!/usr/bin/env bash
-	export DEV_SYS_BASH_ENVIRONMENT_BRANCH=${DEV_SYS_BASH_ENVIRONMENT_BRANCH}
-	EOF
-	set_mode_user_group ${PROVISIONING_SCRIPT_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${bash_environment_script}
-fi
-
-# If DEV_SYS_GIT_CONFIG is specifed, create the Git configuration file from it.
-if [ ! -z "${DEV_SYS_GIT_CONFIG}" ]; then
-	create_dir_with_mode_user_group ${PROVISIONING_DIR_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${git_provisioning_dir}
-	git_config_file=${git_provisioning_dir}/gitconfig
-	echo_color ${cyan} "Creating ${git_config_file} ..."
-	echo "${DEV_SYS_GIT_CONFIG}" | base64 --decode > ${git_config_file}
-	set_mode_user_group ${PROVISIONING_FILE_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${git_config_file}
-fi
-
-# If DEV_SYS_GIT_SSH_PRIVATE_KEY is specifed, create the Git SSH private key file from it.
-if [ ! -z "${DEV_SYS_GIT_SSH_PRIVATE_KEY}" ]; then
-	create_dir_with_mode_user_group ${PROVISIONING_DIR_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${git_provisioning_dir}
-	git_ssh_private_key_file=${git_provisioning_dir}/id_git
-	echo_color ${cyan} "Creating ${git_ssh_private_key_file} ..."
-	echo "${DEV_SYS_GIT_SSH_PRIVATE_KEY}" | base64 --decode > ${git_ssh_private_key_file}
-	set_mode_user_group ${PROVISIONING_FILE_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${git_ssh_private_key_file}
-fi
-
-# Get ansible-dev-sys.
-ansible_dev_sys_dir=${provisioning_dir}/ansible-dev-sys
-if [ -d ${ansible_dev_sys_dir} ]; then
-	echo_color ${cyan} "Removing ${ansible_dev_sys_dir} ..."
-	rm -rf ${ansible_dev_sys_dir}
-fi
-ansible_dev_sys_url=https://github.com/neilluna/ansible-dev-sys.git
-echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${ansible_dev_sys_dir} ..."
-retry_if_fail git clone ${ansible_dev_sys_url} ${ansible_dev_sys_dir} || exit 1
-cd ${ansible_dev_sys_dir}
-git config core.autocrlf false
-git config core.filemode false
-if [ -f ${ansible_dev_sys_script} ]; then
-	echo_color ${cyan} "Sourcing ${ansible_dev_sys_script} ..."
-	source ${ansible_dev_sys_script}
-	echo_color ${cyan} "Changing to branch ${DEV_SYS_ANSIBLE_DEV_SYS_BRANCH} ..."
-	git checkout ${DEV_SYS_ANSIBLE_DEV_SYS_BRANCH}
-fi
-
-# Getting dev-sys.sh from ansible-dev-sys.
-ansible_dev_sys_script=${ansible_dev_sys_dir}/dev-sys.sh
-dev_sys_script=${provisioning_dir}/dev-sys.sh
-echo_color ${cyan} "Copying ${ansible_dev_sys_script} to ${dev_sys_script} ..."
-cp -f ${ansible_dev_sys_dir}/dev-sys.sh ${dev_sys_script}
-set_mode_user_group ${PROVISIONING_SCRIPT_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${dev_sys_script}
-
-echo_color ${cyan} "Removing ${ansible_dev_sys_dir} ..."
-rm -rf ${ansible_dev_sys_dir}
-
-# Create the dev-sys user provisioning directory.
-# This is where dev-sys user related files will be stored.
-dev_user_provisioning_dir=${provisioning_dir}/dev-sys-user
-create_dir_with_mode_user_group ${PROVISIONING_DIR_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP}  ${dev_user_provisioning_dir}
+set_mode_user_group ${ASSET_SCRIPT_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${dev_sys_script}
 
 # Create the SSH keys used to run commands as the dev-sys user.
-dev_user_ssh_private_key_file=${dev_user_provisioning_dir}/id_dev_user
-dev_user_ssh_public_key_file=${dev_user_ssh_private_key_file}.pub
-if [ ! -f ${dev_user_ssh_private_key_file} ]; then
-	echo_color ${cyan} "Creating new SSH keys for dev-sys user ..."
-	ssh-keygen -C id_dev_user -f ${dev_user_ssh_private_key_file} -N ""
-	set_mode_user_group ${PROVISIONING_FILE_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${dev_user_ssh_private_key_file}
-	set_mode_user_group ${PROVISIONING_FILE_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${dev_user_ssh_public_key_file}
+dev_sys_ssh_key_basename=id_dev-sys
+dev_sys_ssh_private_key_file=${assets_dir}/${dev_sys_ssh_key_basename}
+dev_sys_ssh_public_key_file=${dev_sys_ssh_private_key_file}.pub
+if [ ! -f ${dev_sys_ssh_private_key_file} ]; then
+	echo_color ${cyan} "Creating new SSH keys for use by dev-sys ..."
+	ssh-keygen -C ${dev_sys_ssh_key_basename} -f ${dev_sys_ssh_private_key_file} -N ""
+	set_mode_user_group ${ASSET_FILE_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${dev_sys_ssh_private_key_file}
+	set_mode_user_group ${ASSET_FILE_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${dev_sys_ssh_public_key_file}
 fi
-dev_user_ssh_public_key_contents=$(cat ${dev_user_ssh_public_key_file})
-dev_user_authorized_keys_file=${dev_user_home_dir}/.ssh/authorized_keys
-grep -Fx "${dev_user_ssh_public_key_contents}" ${dev_user_authorized_keys_file} > /dev/null
+dev_sys_ssh_public_key_contents=$(cat ${dev_sys_ssh_public_key_file})
+dev_sys_authorized_keys_file=${dev_user_home_dir}/.ssh/authorized_keys
+grep -Fx "${dev_sys_ssh_public_key_contents}" ${dev_sys_authorized_keys_file} > /dev/null
 if [ ${?} -ne 0 ]; then
-	echo_color ${cyan} "Adding the new dev-sys user SSH public key to ${dev_user_authorized_keys_file} ..."
-	echo "${dev_user_ssh_public_key_contents}" >> ${dev_user_authorized_keys_file}
+	echo_color ${cyan} "Adding the dev-sys SSH public key to ${dev_sys_authorized_keys_file} ..."
+	echo "${dev_sys_ssh_public_key_contents}" >> ${dev_sys_authorized_keys_file}
 fi
 add_localhost_to_known_hosts_for_user $(whoami)
 
-echo_color ${cyan} "Running ${dev_sys_script} as '${DEV_SYS_USER}' ..."
-ssh -t ${DEV_SYS_USER}@127.0.0.1 -i ${dev_user_ssh_private_key_file} ${dev_sys_script}
+# Running dev-sys.sh ...
+echo_color ${cyan} "Running ${dev_sys_script} '${playbook_name}' as '${DEV_SYS_USER}' ..."
+ssh -t ${DEV_SYS_USER}@127.0.0.1 -i ${dev_sys_ssh_private_key_file} ${dev_sys_script} ${playbook_name}
+
+# Remove the temporary copy of dev-sys.sh.
+if [ ! -z "${tmp_dev_sys_script}" ]; then
+	echo_color ${cyan} "Removing ${dev_sys_script} ..."
+	rm -rf ${dev_sys_script}
+fi
 
 exit 0
