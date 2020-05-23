@@ -189,7 +189,7 @@ fi
 # Save ANSIBLE_DEV_SYS_DIR into a script for later use.
 ansible_dev_sys_dir_script=${assets_dir}/ansible-dev-sys-dir.sh
 echo_color ${cyan} "Creating ${ansible_dev_sys_dir_script} ..."
-cat <<-EOF > ${ansible_dev_sys_dir_script}
+cat << EOF > ${ansible_dev_sys_dir_script}
 #!/usr/bin/env bash
 ANSIBLE_DEV_SYS_DIR=${ANSIBLE_DEV_SYS_DIR}
 EOF
@@ -203,7 +203,7 @@ fi
 # Save BASH_ENVIRONMENT_DIR into a script for later use.
 bash_environment_dir_script=${assets_dir}/bash-environment-dir.sh
 echo_color ${cyan} "Creating ${bash_environment_dir_script} ..."
-cat <<-EOF > ${bash_environment_dir_script}
+cat << EOF > ${bash_environment_dir_script}
 #!/usr/bin/env bash
 BASH_ENVIRONMENT_DIR=${BASH_ENVIRONMENT_DIR}
 EOF
@@ -212,18 +212,17 @@ set_mode_user_group ${ASSET_SCRIPT_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${bash
 # If ansible-dev-sys does not exist ...
 if [ ! -d ${ANSIBLE_DEV_SYS_DIR} ]; then
 	# Temporarily clone ansible-dev-sys.
+	temp_ansible_dev_sys=${assets_dir}/tmp-ansible-dev-sys
 	ansible_dev_sys_url=https://github.com/neilluna/ansible-dev-sys.git
-	echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${ANSIBLE_DEV_SYS_DIR} ..."
-	retry_if_fail git clone ${ansible_dev_sys_url} ${ANSIBLE_DEV_SYS_DIR} || exit 1
-	cd ${ANSIBLE_DEV_SYS_DIR}
-	git config core.filemode false
+	echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${temp_ansible_dev_sys} ..."
+	retry_if_fail git clone ${ansible_dev_sys_url} ${temp_ansible_dev_sys} || exit 1
+	cd ${temp_ansible_dev_sys}
 
 	# Get a temporary copy of dev-sys.sh from the temporary ansible-dev-sys.
-	dev_sys_script=${ANSIBLE_DEV_SYS_DIR}/dev-sys.sh
-	tmp_dev_sys_script=${assets_dir}/dev-sys.sh
-	echo_color ${cyan} "Copying ${dev_sys_script} to ${tmp_dev_sys_script} ..."
-	cp -f ${dev_sys_script} ${tmp_dev_sys_script}
-	dev_sys_script=${tmp_dev_sys_script}
+	temp_dev_sys_script=${temp_ansible_dev_sys}/dev-sys.sh
+	dev_sys_script=${assets_dir}/dev-sys.sh
+	echo_color ${cyan} "Copying ${temp_dev_sys_script} to ${dev_sys_script} ..."
+	cp -f ${tmp_dev_sys_script} ${dev_sys_script}
 
 	# Remove the temporarily ansible-dev-sys.
 	echo_color ${cyan} "Removing ${ANSIBLE_DEV_SYS_DIR} ..."
@@ -254,12 +253,6 @@ add_localhost_to_known_hosts_for_user $(whoami)
 
 # Running dev-sys.sh ...
 echo_color ${cyan} "Running ${dev_sys_script} '${playbook_name}' as '${DEV_SYS_USER}' ..."
-ssh -t ${DEV_SYS_USER}@127.0.0.1 -i ${dev_sys_ssh_private_key_file} ${dev_sys_script} ${playbook_name}
-
-# Remove the temporary copy of dev-sys.sh.
-if [ ! -z "${tmp_dev_sys_script}" ]; then
-	echo_color ${cyan} "Removing ${dev_sys_script} ..."
-	rm -rf ${dev_sys_script}
-fi
+ssh ${DEV_SYS_USER}@127.0.0.1 -i ${dev_sys_ssh_private_key_file} ${dev_sys_script} ${playbook_name}
 
 exit 0
