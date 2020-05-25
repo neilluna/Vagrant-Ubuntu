@@ -1,42 +1,84 @@
 ---
-# Make a copy of this file and name it 'config.yaml'.
+# Make a copy of this file and name it 'config.yml'.
 # Set the variables in 'config.yaml'.
 
-# AWS configuration.
-# Set "enable" to true if you want an AWS EC2 configuration.
-aws:
-  enable: false
-  access_key_id: '12345abcde'
-  secret_access_key: '12345abcde'
+####################
+# Virtual Machine (VM) settings.
 
-# DigitalOcean configuration.
-# Set "enable" to true if you want a DigitalOcean VM configuration.
-digitalocean:
-  enable: false
-  api_token: '12345abcde'
-  private_key_file: '\native\os\path\to\the\private\ssh\key'
-  ssh_key_name: 'digitalocean-ssh-key-name'
-  image: 'ubuntu-18-04-x64'
-  region: 'nyc1'
-  size: '4gb'
+virtual_machines:
 
-# Git configuration for the VM.
-# Set "enable" to true if you want the host's Git environment configured on the VM.
-git:
-  enable: false
-  user_email: 'user@email.com'
-  user_name: 'First Last'
-  ssh_private_key_file: '\native\os\path\to\the\private\ssh\key'
+# - hostname: 'do-nluna'
+#   provider: 'digitalocean'
 
-# Misc Vagrant configuration items.
-vagrant:
-  # Vagrant VM hostname prefix. This is prepended to the VM name.
-  # Example: username-issue-number
-  vm_prefix: 'hostname-prefix'
+# - hostname: 'do-nluna'
+#   provider: 'virtualbox'
 
-# VirtualBox configuration.
-# Set "enable" to true if you want a VirtualBox VM configuration.
-virtualbox:
-  enable: true
-  add_public_network_adapter: true
-  update_guest_additions: false
+####################
+# Default settings for all VMs.
+# These can be overriden by individual VM settings.
+
+defaults:
+
+  # The default 'autostart' for a Vagrant VM.
+  autostart: false
+
+  # The default provider for a Vagrant VM.
+  provider: 'virtualbox'
+
+  # ansible-dev-sys settings.
+  # Optional. Used to fine tune the ansible-dev-sys check-out.
+  ansible_dev_sys:
+    # This species that ansible-dev-sys will already be on the VM, synced from the host.
+    # The dev-sys.sh script in ansible-dev-sys will not clone a copy from git.
+    # This is used for ansible-dev-sys development.
+    # dir: '/full/path/to/the/ansible-dev-sys/dir/on/the/vm'
+
+    # This species the ansible-dev-sys playbook to run.
+    playbook_name: 'common'
+
+  # bash-environment settings.
+  # Optional. Used to fine tune the bash-environment check-out.
+  # bash_environment:
+    # This species that bash-environment will already be on the VM, synced from the host.
+    # The Ansible bash-environment role will not clone a copy from git.
+    # The dev-sys.sh script will manage change detection.
+    # This is used for bash-environment development.
+    # dir: '/full/path/to/the/bash-environment/dir/on/the/vm'
+
+  # DigitalOcean settings.
+  # This must be present if any of the VMs use the 'digitalocean' provider.
+  digitalocean:
+    api_token: '12345'
+
+    # The 'private_key_file' is used by Vagrant to access DigitalOcean.
+    # It is assumed that the matching public key has already been uploaded to DigitalOcean.
+    # 'ssh_key_name' is the name of the public key on DigitalOcean.
+    private_key_file: '\native\os\path\to\an\ssh\private\key'
+    ssh_key_name: 'digitalocean-key-name'
+
+    # Default VM parameters.
+    # Note: If you change or override any of the following parameters, make sure that the combination of these
+    # parameters is valid for the specified 'region'. Not all regions support all combinations of parameters.
+    image: 'ubuntu-18-04-x64'
+    region: 'nyc1'
+    size: '4gb'
+
+  # VirtualBox settings.
+  # This must be present if any of the VMs use the 'virtualbox' provider.
+  virtualbox:
+
+    # Should the VM have a network adapter that bridges to the host's network?
+    add_public_network_adapter: false
+
+    # Should the host display the VM's console?
+    gui: false
+
+    # Default VM parameters.
+    box: 'ubuntu/bionic64'
+    # If 'disk_size' is 'default', the VM's disk will not be resized.
+    # If 'disk_size' is not 'default', then it must be a number followed by 'GB', such as '40GB'.
+    disk_size: 'default'
+    memory: 4096
+
+    # Should the VirtualBox guest additions on the VM should be updated if out of date?
+    update_guest_additions: false
