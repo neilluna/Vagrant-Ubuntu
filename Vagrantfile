@@ -164,10 +164,14 @@ module Vagrant_Dev_Sys
 
       if ansible_dev_sys_options.key?("dir")
         shell.env["ANSIBLE_DEV_SYS_DIR"] = ansible_dev_sys_options["dir"]
+      elsif ansible_dev_sys_options.key?("version")
+        shell.env["ANSIBLE_DEV_SYS_VERSION"] = ansible_dev_sys_options["version"]
       end
 
       if bash_environment_options.key?("dir")
         shell.env["BASH_ENVIRONMENT_DIR"] = bash_environment_options["dir"]
+      elsif bash_environment_options.key?("version")
+        shell.env["BASH_ENVIRONMENT_VERSION"] = bash_environment_options["version"]
       end
     end  # sys.vm.provision "shell"
   end  # def self.provision()

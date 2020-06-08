@@ -197,6 +197,9 @@ cat << EOF > ${ansible_dev_sys_vars_script}
 ANSIBLE_DEV_SYS_DIR=${ANSIBLE_DEV_SYS_DIR}
 ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY=${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY}
 EOF
+if [ ! -z "${ANSIBLE_DEV_SYS_VERSION}" ]; then
+	echo "ANSIBLE_DEV_SYS_VERSION=${ANSIBLE_DEV_SYS_VERSION}" >> ${ansible_dev_sys_vars_script}
+fi
 set_mode_user_group ${ASSET_SCRIPT_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${ansible_dev_sys_vars_script}
 
 # If BASH_ENVIRONMENT_DIR is set, then assume that bash-environment is being managed by the host.
@@ -215,6 +218,9 @@ cat << EOF > ${bash_environment_vars_script}
 BASH_ENVIRONMENT_DIR=${BASH_ENVIRONMENT_DIR}
 BASH_ENVIRONMENT_MANAGED_EXTERNALLY=${BASH_ENVIRONMENT_MANAGED_EXTERNALLY}
 EOF
+if [ ! -z "${BASH_ENVIRONMENT_VERSION}" ]; then
+	echo "BASH_ENVIRONMENT_VERSION=${BASH_ENVIRONMENT_VERSION}" >> ${bash_environment_vars_script}
+fi
 set_mode_user_group ${ASSET_SCRIPT_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${bash_environment_vars_script}
 
 # If ansible-dev-sys does not exists, then temporarily clone it and get a copy of its dev-sys.sh.
@@ -224,6 +230,10 @@ if [ ! -d ${ANSIBLE_DEV_SYS_DIR} ]; then
 	ansible_dev_sys_url=https://github.com/neilluna/ansible-dev-sys.git
 	echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${tmp_ansible_dev_sys_dir} ..."
 	retry_if_fail git clone ${ansible_dev_sys_url} ${tmp_ansible_dev_sys_dir} || exit 1
+	if [ ! -z "${ANSIBLE_DEV_SYS_VERSION}" ]; then
+		cd ${tmp_ansible_dev_sys_dir}
+		git checkout ${ANSIBLE_DEV_SYS_VERSION}
+	fi
 
 	# Get a temporary copy of dev-sys.sh from the temporary ansible-dev-sys.
 	tmp_dev_sys_script=${tmp_ansible_dev_sys_dir}/dev-sys.sh
