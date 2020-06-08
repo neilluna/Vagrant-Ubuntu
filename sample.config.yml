@@ -47,21 +47,38 @@ defaults:
 
   # DigitalOcean settings.
   # This must be present if any of the VMs use the 'digitalocean' provider.
-  digitalocean:
-    api_token: '12345'
+  # digitalocean:
+    # api_token: '12345'
 
     # The 'private_key_file' is used by Vagrant to access DigitalOcean.
     # It is assumed that the matching public key has already been uploaded to DigitalOcean.
     # 'ssh_key_name' is the name of the public key on DigitalOcean.
-    private_key_file: '\native\os\path\to\an\ssh\private\key'
-    ssh_key_name: 'digitalocean-key-name'
+    # private_key_file: '\full\path\to\the\host\ssh\private\key\file'
+    # ssh_key_name: 'digitalocean-key-name'
 
     # Default VM parameters.
     # Note: If you change or override any of the following parameters, make sure that the combination of these
     # parameters is valid for the specified 'region'. Not all regions support all combinations of parameters.
-    image: 'ubuntu-18-04-x64'
-    region: 'nyc1'
-    size: '4gb'
+    # image: 'ubuntu-18-04-x64'
+    # region: 'nyc1'
+    # size: '4gb'
+
+  # Directories and files to be copied to the VM during provisioning.
+  # provision:
+    # dirs:
+    # - host: 'C:\full\path\to\the\dir\to\copy\on\the\host'
+    #   remote: '/full/path/to/the/destination/dirname/on/the/vm'
+    #   dir_mode: 'chmod-mode-for-all-the-dirs-in-the-vm-destination'
+    #   file_mode: 'chmod-mode-for-all-the-files-in-the-vm-destination'
+    # files:
+    # - host: 'C:\full\path\to\the\file\to\copy\on\the\host'
+    #   remote: '/full/path/to/the/destination/filename/on/the/vm'
+    #   file_mode: 'chmod-mode-for-the-file-at-the-vm-destination'
+
+  # Directories to be synced during provisioning and upon command.
+  # synced_folders:
+    # - host: 'C:\full\path\to\the\dir\to\sync\on\the\host'
+    #   remote: '/full/path/to/the/destination/dirname/on/the/vm'
 
   # VirtualBox settings.
   # This must be present if any of the VMs use the 'virtualbox' provider.
