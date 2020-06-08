@@ -7,11 +7,11 @@
 
 virtual_machines:
 
-# - hostname: 'do-nluna'
-#   provider: 'digitalocean'
-
-# - hostname: 'do-nluna'
+# - hostname: 'vb-dev-sys'
 #   provider: 'virtualbox'
+
+# - hostname: 'do-dev-sys'
+#   provider: 'digitalocean'
 
 ####################
 # Default settings for all VMs.
@@ -28,10 +28,16 @@ defaults:
   # ansible-dev-sys settings.
   # Optional. Used to fine tune the ansible-dev-sys check-out.
   ansible_dev_sys:
-    # This species that ansible-dev-sys will already be on the VM, synced from the host.
+    # This specifies that ansible-dev-sys will already be on the VM, synced from the host.
     # The dev-sys.sh script in ansible-dev-sys will not clone a copy from git.
     # This is used for ansible-dev-sys development.
+    # This option overrides 'version'.
     # dir: '/full/path/to/the/ansible-dev-sys/dir/on/the/vm'
+
+    # What ansible-dev-sys repository branch should Vagrant clone and use?
+    # This is used for ansible-dev-sys development.
+    # This option is overridden by the 'dir'.
+    # version: 'develop'
 
     # This species the ansible-dev-sys playbook to run.
     playbook_name: 'common'
@@ -39,11 +45,17 @@ defaults:
   # bash-environment settings.
   # Optional. Used to fine tune the bash-environment check-out.
   # bash_environment:
-    # This species that bash-environment will already be on the VM, synced from the host.
+    # This specifies that bash-environment will already be on the VM, synced from the host.
     # The Ansible bash-environment role will not clone a copy from git.
     # The dev-sys.sh script will manage change detection.
     # This is used for bash-environment development.
+    # This option overrides 'version'.
     # dir: '/full/path/to/the/bash-environment/dir/on/the/vm'
+
+    # What bash-environment repository branch should the Ansible bash-environment role clone and use?
+    # This is used for ansible-dev-sys development.
+    # This option is overridden by the 'dir'.
+    # version: 'develop'
 
   # DigitalOcean settings.
   # This must be present if any of the VMs use the 'digitalocean' provider.
