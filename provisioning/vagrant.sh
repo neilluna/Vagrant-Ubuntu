@@ -54,7 +54,7 @@ function set_mode_user_group()
 }
 
 # Create a directory, if it does not exist.
-# If created, set the mode, user, and group of the new directory.
+# If created, then set the mode, user, and group of the new directory.
 # Usage: create_dir_with_mode_user_group mode user group dir
 function create_dir_with_mode_user_group()
 {
@@ -181,52 +181,59 @@ echo_color ${cyan} "DEV_SYS user: '${DEV_SYS_USER}', group: '${DEV_SYS_GROUP}', 
 assets_dir=${dev_user_home_dir}/.dev-sys
 create_dir_with_mode_user_group ${ASSET_DIR_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${assets_dir}
 
-# If ANSIBLE_DEV_SYS_DIR is not defined, set it to a default.
-if [ -z "${ANSIBLE_DEV_SYS_DIR}" ]; then
+# If ANSIBLE_DEV_SYS_DIR is set, then assume that ansible-dev-sys is being managed by the host.
+if [ ! -z "${ANSIBLE_DEV_SYS_DIR}" ]; then
+	ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY=true
+else
 	ANSIBLE_DEV_SYS_DIR=${assets_dir}/ansible-dev-sys
+	ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY=false
 fi
 
-# Save ANSIBLE_DEV_SYS_DIR into a script for later use.
-ansible_dev_sys_dir_script=${assets_dir}/ansible-dev-sys-dir.sh
-echo_color ${cyan} "Creating ${ansible_dev_sys_dir_script} ..."
-cat << EOF > ${ansible_dev_sys_dir_script}
+# Save the ansible-dev-sys variables into a script for later use.
+ansible_dev_sys_vars_script=${assets_dir}/ansible-dev-sys-vars.sh
+echo_color ${cyan} "Creating ${ansible_dev_sys_vars_script} ..."
+cat << EOF > ${ansible_dev_sys_vars_script}
 #!/usr/bin/env bash
 ANSIBLE_DEV_SYS_DIR=${ANSIBLE_DEV_SYS_DIR}
+ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY=${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY}
 EOF
-set_mode_user_group ${ASSET_SCRIPT_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${ansible_dev_sys_dir_script}
+set_mode_user_group ${ASSET_SCRIPT_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${ansible_dev_sys_vars_script}
 
-# If BASH_ENVIRONMENT_DIR is not defined, set it to a default.
-if [ -z "${BASH_ENVIRONMENT_DIR}" ]; then
+# If BASH_ENVIRONMENT_DIR is set, then assume that bash-environment is being managed by the host.
+if [ ! -z "${BASH_ENVIRONMENT_DIR}" ]; then
+	BASH_ENVIRONMENT_MANAGED_EXTERNALLY=true
+else
 	BASH_ENVIRONMENT_DIR=${assets_dir}/bash-environment
+	BASH_ENVIRONMENT_MANAGED_EXTERNALLY=false
 fi
 
-# Save BASH_ENVIRONMENT_DIR into a script for later use.
-bash_environment_dir_script=${assets_dir}/bash-environment-dir.sh
-echo_color ${cyan} "Creating ${bash_environment_dir_script} ..."
-cat << EOF > ${bash_environment_dir_script}
+# Save the bash-environment variables into a script for later use.
+bash_environment_vars_script=${assets_dir}/bash-environment-vars.sh
+echo_color ${cyan} "Creating ${bash_environment_vars_script} ..."
+cat << EOF > ${bash_environment_vars_script}
 #!/usr/bin/env bash
 BASH_ENVIRONMENT_DIR=${BASH_ENVIRONMENT_DIR}
+BASH_ENVIRONMENT_MANAGED_EXTERNALLY=${BASH_ENVIRONMENT_MANAGED_EXTERNALLY}
 EOF
-set_mode_user_group ${ASSET_SCRIPT_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${bash_environment_dir_script}
+set_mode_user_group ${ASSET_SCRIPT_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${bash_environment_vars_script}
 
-# If ansible-dev-sys does not exist ...
+# If ansible-dev-sys does not exists, then temporarily clone it and get a copy of its dev-sys.sh.
 if [ ! -d ${ANSIBLE_DEV_SYS_DIR} ]; then
 	# Temporarily clone ansible-dev-sys.
-	temp_ansible_dev_sys=${assets_dir}/tmp-ansible-dev-sys
+	tmp_ansible_dev_sys_dir=${assets_dir}/tmp-ansible-dev-sys
 	ansible_dev_sys_url=https://github.com/neilluna/ansible-dev-sys.git
-	echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${temp_ansible_dev_sys} ..."
-	retry_if_fail git clone ${ansible_dev_sys_url} ${temp_ansible_dev_sys} || exit 1
-	cd ${temp_ansible_dev_sys}
+	echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${tmp_ansible_dev_sys_dir} ..."
+	retry_if_fail git clone ${ansible_dev_sys_url} ${tmp_ansible_dev_sys_dir} || exit 1
 
 	# Get a temporary copy of dev-sys.sh from the temporary ansible-dev-sys.
-	temp_dev_sys_script=${temp_ansible_dev_sys}/dev-sys.sh
+	tmp_dev_sys_script=${tmp_ansible_dev_sys_dir}/dev-sys.sh
 	dev_sys_script=${assets_dir}/dev-sys.sh
-	echo_color ${cyan} "Copying ${temp_dev_sys_script} to ${dev_sys_script} ..."
+	echo_color ${cyan} "Copying ${tmp_dev_sys_script} to ${dev_sys_script} ..."
 	cp -f ${tmp_dev_sys_script} ${dev_sys_script}
 
 	# Remove the temporarily ansible-dev-sys.
-	echo_color ${cyan} "Removing ${ANSIBLE_DEV_SYS_DIR} ..."
-	rm -rf ${ANSIBLE_DEV_SYS_DIR}
+	echo_color ${cyan} "Removing ${tmp_ansible_dev_sys_dir} ..."
+	rm -rf ${tmp_ansible_dev_sys_dir}
 else
 	dev_sys_script=${ANSIBLE_DEV_SYS_DIR}/dev-sys.sh
 fi
