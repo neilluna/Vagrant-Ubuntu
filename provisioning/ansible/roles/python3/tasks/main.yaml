@@ -1,6 +1,0 @@
----
-- name: Installing ...
-  apt:
-    name: python3
-    state: latest
-  become: yes

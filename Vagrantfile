@@ -151,7 +151,7 @@ module Vagrant_Dev_Sys
 
     sys.vm.provision "shell" do |shell|
       shell.keep_color = true
-      shell.path = "provisioning/vagrant.sh"
+      shell.path = "provision.sh"
 
       if ansible_dev_sys_options.key?("playbook_name")
         shell.args = ansible_dev_sys_options["playbook_name"]

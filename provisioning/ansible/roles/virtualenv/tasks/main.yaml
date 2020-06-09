@@ -1,7 +1,0 @@
----
-- name: Installing ...
-  pip:
-    executable: pip3
-    name: virtualenv
-    state: latest
-  become: yes
