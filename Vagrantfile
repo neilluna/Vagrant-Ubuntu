@@ -1,109 +1,195 @@
-require "base64"
 require "pathname"
 require "yaml"
 
 module Vagrant_Dev_Sys
   PROJECT_DIR = Pathname.new(__FILE__).dirname.relative_path_from(Pathname.getwd)
-  CONFIG_FILE = PROJECT_DIR + "config.yaml"
+  CONFIG_FILE = PROJECT_DIR + "config.yml"
 
-  # Vagrantfile API/syntax version. Don't change unless you know what you're doing!
+  # Vagrantfile API/syntax version. Do not change this unless you know what you're doing!
   VAGRANTFILE_API_VERSION = "2"
 
-  # Configure the build VMs.
+  # Configure the VMs.
   def self.configure
     if !(CONFIG_FILE).file?
       puts "Error: #{CONFIG_FILE} is missing."
       exit!
     end
-    @@config_vars = YAML.load_file(CONFIG_FILE)
+
+    config_file = YAML.load_file(CONFIG_FILE)
+    default_options = config_file["defaults"]
+
     Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-      if @@config_vars["digitalocean"]["include_configuration"]
-        configure_digitalocean config
-      end
-      if @@config_vars["virtualbox"]["include_configuration"]
-        configure_virtualbox config
-      end
-    end
-  end
+      config_file["virtual_machines"].each do |vm_options|
+        options = merge_options(vm_options, default_options)
+        provider = options["provider"]
+        if provider == "digitalocean"
+          configure_digitalocean(config, options)
+        end
+        if provider == "virtualbox"
+          configure_virtualbox(config, options)
+        end
+      end  # config_file ... do |vm_options|
+    end  # Vagrant.configure ...  do |config|
+  end  # def self.configure
 
-  # Configure the DigitalOcean build VM.
-  def self.configure_digitalocean(config)
-    name = "#{@@config_vars["vagrant"]["vm_prefix"]}-do"
-    config.vm.define name, autostart: false do |sys|
+  # Configure a DigitalOcean VM.
+  def self.configure_digitalocean(config, options)
+    vm_name = options["hostname"]
+    options["user"] = "root"
+    options["group"] = "root"
+    provider_options = options["digitalocean"]
+
+    config.vm.define vm_name, autostart: options["autostart"] do |sys|
       sys.vm.box = "digital_ocean"
-      sys.vm.hostname = name
-      sys.ssh.private_key_path = @@config_vars["digitalocean"]["private_key_file"]
+      sys.vm.hostname = vm_name
+      sys.ssh.private_key_path = provider_options["private_key_file"]
       sys.vm.provider "digital_ocean" do |provider|
-        provider.token = @@config_vars["digitalocean"]["api_token"]
-        provider.image = "ubuntu-18-04-x64"
-        provider.region = "nyc1"
-        provider.size = "4gb"
-        provider.ssh_key_name = @@config_vars["digitalocean"]["ssh_key_name"]
-      end
-      sync_folder sys, "root", "root"
-      provision sys, "root", "root"
-    end
-  end
+        provider.token = provider_options["api_token"]
+        provider.image = provider_options["image"]
+        provider.region = provider_options["region"]
+        provider.size = provider_options["size"]
+        provider.ssh_key_name = provider_options["ssh_key_name"]
+      end  # sys.vm.provider ... do |provider|
 
-  # Configure the VirtualBox build VM.
-  def self.configure_virtualbox(config)
-    name = "#{@@config_vars["vagrant"]["vm_prefix"]}-vb"
-    config.vm.define name, autostart: false do |sys|
-      sys.vm.box = "ubuntu/bionic64"
-      sys.vm.hostname = name
+      synced_folders(sys, options)
+      provision(sys, options)
+    end  # config.vm.define ... do |sys|
+  end  # def self.configure_digitalocean()
+
+  # Configure a VirtualBox VM.
+  def self.configure_virtualbox(config, options)
+    vm_name = options["hostname"]
+    options["user"] = "vagrant"
+    options["group"] = "vagrant"
+    provider_options = options["virtualbox"]
+
+    config.vm.define vm_name, autostart: options["autostart"] do |sys|
+      sys.vm.box = provider_options["box"]
+      sys.vm.hostname = vm_name
       sys.vm.provider "virtualbox" do |provider|
         provider.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
         provider.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
-        provider.gui = false
-        provider.memory = 4096
+        provider.gui = provider_options["gui"]
+        provider.memory = provider_options["memory"]
+      end  # sys.vm.provider ... do |provider|
+
+      if provider_options["disk_size"] != 'default'
+        sys.disksize.size = provider_options["disk_size"]
       end
-      if @@config_vars["virtualbox"]["add_public_network_adapter"]
+
+      if provider_options["add_public_network_adapter"]
         sys.vm.network "public_network", type: "dhcp"
       end
-      sync_folder sys, "vagrant", "vagrant"
-      provision sys, "vagrant", "vagrant"
-    end
-  end
 
-  # Define the provisioning script and variables.
-  def self.provision(sys, user, group)
+      config.vbguest.auto_update = provider_options["update_guest_additions"]
+      if provider_options["update_guest_additions"]
+        sys.vm.provision "shell", reboot: true
+      end
+
+      synced_folders(sys, options)
+      provision(sys, options)
+    end  # config.vm.define ... do |sys|
+  end  # def self.configure_virtualbox()
+
+  # Recursively merge two values.
+  def self.merge_options(vm_option, default_option)
+    # If both are hashes, then merge them.
+    if vm_option.is_a?(Hash) && default_option.is_a?(Hash)
+      merged_option = {}
+      default_option.each do |key, default_value|
+        if vm_option.key?(key)
+          merged_option[key] = merge_options(vm_option[key], default_value)
+        else
+          merged_option[key] = default_value
+        end
+      end
+      vm_option.each do |key, vm_value|
+        if !default_option.key?(key)
+          merged_option[key] = vm_value
+        end
+      end
+      return merged_option
+    
+    # If both are arrays, then union them.
+    elsif vm_option.is_a?(Array) && default_option.is_a?(Array)
+      return vm_option | default_option
+
+    # If they are of dissimilar types, or either is not a hash or array, the vm_option overrides the default_option.
+    else
+      return vm_option
+    end
+  end  # def self.merge_options()
+
+  # Provisioning a VM.
+  def self.provision(sys, options)
+    provision_options = options.key?("provision") ? options["provision"] : {}
+    provision_dirs = provision_options.key?("dirs") ? provision_options["dirs"] : {}
+    provision_files = provision_options.key?("files") ? provision_options["files"] : {}
+
+    ansible_dev_sys_options = options.key?("ansible_dev_sys") ? options["ansible_dev_sys"] : {}
+    bash_environment_options = options.key?("bash_environment") ? options["bash_environment"] : {}
+
+    provision_dirs.each do |dir|
+      sys.vm.provision "file", source: dir["host"], destination: dir["remote"]
+      if dir.key?("dir_mode")
+        command = "find #{dir["remote"]} -type d -exec chmod #{dir["dir_mode"]}" + ' {} \;'
+        sys.vm.provision "shell", inline: command
+      end
+      if dir.key?("file_mode")
+        command = "find #{dir["remote"]} -type f -exec chmod #{dir["file_mode"]}" + ' {} \;'
+        sys.vm.provision "shell", inline: command
+      end
+    end  # provision_dirs.each do |dir|
+
+    provision_files.each do |file|
+      sys.vm.provision "file", source: file["host"], destination: file["remote"]
+      if file.key?("file_mode")
+        command = "chmod #{file["file_mode"]} #{file["remote"]}"
+        sys.vm.provision "shell", inline: command
+      end
+    end  # provision_files.each do |file|
+
     sys.vm.provision "shell" do |shell|
       shell.keep_color = true
-      shell.path = "provisioning/provision.sh"
+      shell.path = "provisioning/vagrant.sh"
+
+      if ansible_dev_sys_options.key?("playbook_name")
+        shell.args = ansible_dev_sys_options["playbook_name"]
+      end
+
       shell.env = {
-        "VAGRANT_VM_NAME" => sys.vm.hostname,
-        "VAGRANT_USER" => user,
-        "VAGRANT_USER_GROUP" => group
+        "DEV_SYS_USER" => options["user"],
+        "DEV_SYS_GROUP" => options["group"]
       }
-      if @@config_vars["aws_user"]["provision_environment"]
-        shell.env["PROVISION_AWS_ENVIRONMENT"] = "true"
-        shell.env["AWS_ACCESS_KEY_ID"] = @@config_vars["aws_user"]["access_key_id"]
-        shell.env["AWS_SECRET_ACCESS_KEY"] = @@config_vars["aws_user"]["secret_access_key"]
+
+      if ansible_dev_sys_options.key?("dir")
+        shell.env["ANSIBLE_DEV_SYS_DIR"] = ansible_dev_sys_options["dir"]
+      elsif ansible_dev_sys_options.key?("version")
+        shell.env["ANSIBLE_DEV_SYS_VERSION"] = ansible_dev_sys_options["version"]
       end
-      if @@config_vars["git"]["provision_environment"]
-        shell.env["PROVISION_GIT_ENVIRONMENT"] = "true"
-        shell.env["GIT_USER_NAME"] = @@config_vars["git"]["user_name"]
-        shell.env["GIT_USER_EMAIL"] = @@config_vars["git"]["user_email"]
-        git_ssh_private_key = ""
-        File.foreach(@@config_vars["git"]["ssh_private_key_file"]) {|line|git_ssh_private_key << line}
-        shell.env["GIT_SSH_PRIVATE_KEY"] = Base64.strict_encode64(git_ssh_private_key)
+
+      if bash_environment_options.key?("dir")
+        shell.env["BASH_ENVIRONMENT_DIR"] = bash_environment_options["dir"]
+      elsif bash_environment_options.key?("version")
+        shell.env["BASH_ENVIRONMENT_VERSION"] = bash_environment_options["version"]
       end
-    end
-  end
+    end  # sys.vm.provision "shell"
+  end  # def self.provision()
 
   # Define the synced folder and method.
-  def self.sync_folder(sys, user, group)
-    sys.vm.synced_folder ".", "/vagrant",
-      type: "rsync",
-      create: "true",
-      rsync__args: [
-        "-lrtz",
-        "--exclude-from=bin.host-only/synced-folder-exclude",
-        "--chown=#{user}:#{group}"
-      ],
-      rsync__verbose: "true"
-  end
+  def self.synced_folders(sys, options)
+    synced_folders = options.key?("synced_folders") ? options["synced_folders"] : {}
 
-end
+    sys.vm.synced_folder ".", "/vagrant", disabled: true
+    synced_folders.each do |folder|
+      sys.vm.synced_folder folder["host"], folder["remote"],
+        type: "rsync",
+        create: "true",
+        rsync__args: ["-lrtz"],
+        rsync__exclude: [".git/", ".gitignore"],
+        rsync__verbose: "true"
+    end  # synced_folders.each do |folder|
+  end  # def self.synced_folders()
+end  # module Vagrant_Dev_Sys
 
 Vagrant_Dev_Sys.configure

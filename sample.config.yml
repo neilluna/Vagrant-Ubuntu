@@ -1,0 +1,113 @@
+---
+# Make a copy of this file and name it 'config.yml'.
+# Set the variables in 'config.yaml'.
+
+####################
+# Virtual Machine (VM) settings.
+
+virtual_machines:
+
+# - hostname: 'vb-dev-sys'
+#   provider: 'virtualbox'
+
+# - hostname: 'do-dev-sys'
+#   provider: 'digitalocean'
+
+####################
+# Default settings for all VMs.
+# These can be overriden by individual VM settings.
+
+defaults:
+
+  # The default 'autostart' for a Vagrant VM.
+  autostart: false
+
+  # The default provider for a Vagrant VM.
+  provider: 'virtualbox'
+
+  # ansible-dev-sys settings.
+  # Optional. Used to fine tune the ansible-dev-sys check-out.
+  ansible_dev_sys:
+    # This specifies that ansible-dev-sys will already be on the VM, synced from the host.
+    # The dev-sys.sh script in ansible-dev-sys will not clone a copy from git.
+    # This is used for ansible-dev-sys development.
+    # This option overrides 'version'.
+    # dir: '/full/path/to/the/ansible-dev-sys/dir/on/the/vm'
+
+    # What ansible-dev-sys repository branch should Vagrant clone and use?
+    # This is used for ansible-dev-sys development.
+    # This option is overridden by the 'dir'.
+    # version: 'develop'
+
+    # This species the ansible-dev-sys playbook to run.
+    playbook_name: 'common'
+
+  # bash-environment settings.
+  # Optional. Used to fine tune the bash-environment check-out.
+  # bash_environment:
+    # This specifies that bash-environment will already be on the VM, synced from the host.
+    # The Ansible bash-environment role will not clone a copy from git.
+    # The dev-sys.sh script will manage change detection.
+    # This is used for bash-environment development.
+    # This option overrides 'version'.
+    # dir: '/full/path/to/the/bash-environment/dir/on/the/vm'
+
+    # What bash-environment repository branch should the Ansible bash-environment role clone and use?
+    # This is used for ansible-dev-sys development.
+    # This option is overridden by the 'dir'.
+    # version: 'develop'
+
+  # DigitalOcean settings.
+  # This must be present if any of the VMs use the 'digitalocean' provider.
+  # digitalocean:
+    # api_token: '12345'
+
+    # The 'private_key_file' is used by Vagrant to access DigitalOcean.
+    # It is assumed that the matching public key has already been uploaded to DigitalOcean.
+    # 'ssh_key_name' is the name of the public key on DigitalOcean.
+    # private_key_file: '\full\path\to\the\host\ssh\private\key\file'
+    # ssh_key_name: 'digitalocean-key-name'
+
+    # Default VM parameters.
+    # Note: If you change or override any of the following parameters, make sure that the combination of these
+    # parameters is valid for the specified 'region'. Not all regions support all combinations of parameters.
+    # image: 'ubuntu-18-04-x64'
+    # region: 'nyc1'
+    # size: '4gb'
+
+  # Directories and files to be copied to the VM during provisioning.
+  # provision:
+    # dirs:
+    # - host: 'C:\full\path\to\the\dir\to\copy\on\the\host'
+    #   remote: '/full/path/to/the/destination/dirname/on/the/vm'
+    #   dir_mode: 'chmod-mode-for-all-the-dirs-in-the-vm-destination'
+    #   file_mode: 'chmod-mode-for-all-the-files-in-the-vm-destination'
+    # files:
+    # - host: 'C:\full\path\to\the\file\to\copy\on\the\host'
+    #   remote: '/full/path/to/the/destination/filename/on/the/vm'
+    #   file_mode: 'chmod-mode-for-the-file-at-the-vm-destination'
+
+  # Directories to be synced during provisioning and upon command.
+  # synced_folders:
+    # - host: 'C:\full\path\to\the\dir\to\sync\on\the\host'
+    #   remote: '/full/path/to/the/destination/dirname/on/the/vm'
+
+  # VirtualBox settings.
+  # This must be present if any of the VMs use the 'virtualbox' provider.
+  virtualbox:
+
+    # Should the VM have a network adapter that bridges to the host's network?
+    add_public_network_adapter: false
+
+    # Should the host display the VM's console?
+    gui: false
+
+    # Default VM parameters.
+    box: 'ubuntu/bionic64'
+    # If 'disk_size' is 'default', the VM's disk will not be resized.
+    # If 'disk_size' is not 'default', then it must be a number followed by 'GB', such as '40GB'.
+    disk_size: 'default'
+    memory: 4096
+
+    # Should the VirtualBox guest additions on the VM should be updated if out of date?
+    update_guest_additions: false
