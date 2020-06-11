@@ -229,17 +229,19 @@ if [ ! -d ${ANSIBLE_DEV_SYS_DIR} ]; then
 	tmp_ansible_dev_sys_dir=${assets_dir}/tmp-ansible-dev-sys
 	ansible_dev_sys_url=https://github.com/neilluna/ansible-dev-sys.git
 	echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${tmp_ansible_dev_sys_dir} ..."
-	retry_if_fail git clone ${ansible_dev_sys_url} ${tmp_ansible_dev_sys_dir} || exit 1
+	retry_if_fail git clone ${ansible_dev_sys_url} ${tmp_ansible_dev_sys_dir}
 	if [ ! -z "${ANSIBLE_DEV_SYS_VERSION}" ]; then
 		cd ${tmp_ansible_dev_sys_dir}
+		echo_color ${cyan} "Switching to branch '${ANSIBLE_DEV_SYS_VERSION}' ..."
 		git checkout ${ANSIBLE_DEV_SYS_VERSION}
 	fi
 
-	# Get a temporary copy of dev-sys.sh from the temporary ansible-dev-sys.
+	# Get a temporary copy of dev-sys.sh from the temporary ansible-dev-sys, for use by this script.
 	tmp_dev_sys_script=${tmp_ansible_dev_sys_dir}/dev-sys.sh
-	dev_sys_script=${assets_dir}/dev-sys.sh
-	echo_color ${cyan} "Copying ${tmp_dev_sys_script} to ${dev_sys_script} ..."
-	cp -f ${tmp_dev_sys_script} ${dev_sys_script}
+	vagrant_dev_sys_script=${assets_dir}/vagrant-dev-sys.sh
+	echo_color ${cyan} "Copying ${tmp_dev_sys_script} to ${vagrant_dev_sys_script} ..."
+	cp -f ${tmp_dev_sys_script} ${vagrant_dev_sys_script}
+	dev_sys_script=${vagrant_dev_sys_script}
 
 	# Remove the temporarily ansible-dev-sys.
 	echo_color ${cyan} "Removing ${tmp_ansible_dev_sys_dir} ..."
@@ -271,5 +273,10 @@ add_localhost_to_known_hosts_for_user $(whoami)
 # Running dev-sys.sh ...
 echo_color ${cyan} "Running ${dev_sys_script} '${playbook_name}' as '${DEV_SYS_USER}' ..."
 ssh ${DEV_SYS_USER}@127.0.0.1 -i ${dev_sys_ssh_private_key_file} ${dev_sys_script} ${playbook_name}
+
+if [ ! -z "${vagrant_dev_sys_script}" ]; then
+	echo_color ${cyan} "Removing ${vagrant_dev_sys_script} ..."
+	rm -f ${vagrant_dev_sys_script}
+fi
 
 exit 0
