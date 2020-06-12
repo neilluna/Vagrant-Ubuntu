@@ -255,10 +255,10 @@ if [ ! -d ${ANSIBLE_DEV_SYS_DIR} ]; then
 	echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${tmp_ansible_dev_sys_dir} ..."
 	retry_if_fail git clone ${ansible_dev_sys_url} ${tmp_ansible_dev_sys_dir}
 	if [ ! -z "${ANSIBLE_DEV_SYS_VERSION}" ]; then
-		pushd ${tmp_ansible_dev_sys_dir}
+		pushd ${tmp_ansible_dev_sys_dir} > /dev/null
 		echo_color ${cyan} "Switching to branch '${ANSIBLE_DEV_SYS_VERSION}' ..."
 		git checkout ${ANSIBLE_DEV_SYS_VERSION}
-		popd
+		popd > /dev/null
 	fi
 
 	# Get a temporary copy of dev-sys.sh from the temporary ansible-dev-sys, for use by this script.
