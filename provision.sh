@@ -119,8 +119,9 @@ ASSET_DIR_MODE=u+rwx,go-rwx
 ASSET_FILE_MODE=u+rw-x,go-rwx
 ASSET_SCRIPT_MODE=u+rwx,go-rwx
 
-# Make installations non-interactive.
-export DEBIAN_FRONTEND=noninteractive
+# Use these variables instead of the string "root". "root" can be renamed.
+ROOT_UID=0
+ROOT_GID=0
 
 # Command-line switch variables.
 playbook_name=
@@ -177,8 +178,31 @@ echo_color ${cyan} "Current directory: '$(pwd)'"
 dev_user_home_dir=$(eval echo ~${DEV_SYS_USER})
 echo_color ${cyan} "DEV_SYS user: '${DEV_SYS_USER}', group: '${DEV_SYS_GROUP}', home: '${dev_user_home_dir}'"
 
-# Create the provisioning assets directory.
+# Make installations non-interactive.
+export DEBIAN_FRONTEND=noninteractive
+
+# Do not buffer Python stdout.
+export PYTHONUNBUFFERED=TRUE
+
+# The provisioning assets directory.
 assets_dir=${dev_user_home_dir}/.dev-sys
+
+# Create /opt if it is missing.
+create_dir_with_mode_user_group u+rwx,go+rx-w ${ROOT_UID} ${ROOT_GID} /opt
+
+echo_color ${cyan} "Running apt-get update ..."
+retry_if_fail sudo apt-get update --yes
+
+echo_color ${cyan} "Running apt-get upgrade ..."
+retry_if_fail sudo apt-get upgrade --yes
+
+echo_color ${cyan} "Installing or updating software-properties-common ..."
+retry_if_fail sudo apt-get install --yes software-properties-common
+
+echo_color ${cyan} "Installing or updating git ..."
+retry_if_fail sudo apt-get install --yes git
+
+# Create the provisioning assets directory.
 create_dir_with_mode_user_group ${ASSET_DIR_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${assets_dir}
 
 # If ANSIBLE_DEV_SYS_DIR is set, then assume that ansible-dev-sys is being managed by the host.
@@ -229,17 +253,20 @@ if [ ! -d ${ANSIBLE_DEV_SYS_DIR} ]; then
 	tmp_ansible_dev_sys_dir=${assets_dir}/tmp-ansible-dev-sys
 	ansible_dev_sys_url=https://github.com/neilluna/ansible-dev-sys.git
 	echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${tmp_ansible_dev_sys_dir} ..."
-	retry_if_fail git clone ${ansible_dev_sys_url} ${tmp_ansible_dev_sys_dir} || exit 1
+	retry_if_fail git clone ${ansible_dev_sys_url} ${tmp_ansible_dev_sys_dir}
 	if [ ! -z "${ANSIBLE_DEV_SYS_VERSION}" ]; then
-		cd ${tmp_ansible_dev_sys_dir}
+		pushd ${tmp_ansible_dev_sys_dir} > /dev/null
+		echo_color ${cyan} "Switching to branch '${ANSIBLE_DEV_SYS_VERSION}' ..."
 		git checkout ${ANSIBLE_DEV_SYS_VERSION}
+		popd > /dev/null
 	fi
 
-	# Get a temporary copy of dev-sys.sh from the temporary ansible-dev-sys.
+	# Get a temporary copy of dev-sys.sh from the temporary ansible-dev-sys, for use by this script.
 	tmp_dev_sys_script=${tmp_ansible_dev_sys_dir}/dev-sys.sh
-	dev_sys_script=${assets_dir}/dev-sys.sh
-	echo_color ${cyan} "Copying ${tmp_dev_sys_script} to ${dev_sys_script} ..."
-	cp -f ${tmp_dev_sys_script} ${dev_sys_script}
+	vagrant_dev_sys_script=${assets_dir}/vagrant-dev-sys.sh
+	echo_color ${cyan} "Copying ${tmp_dev_sys_script} to ${vagrant_dev_sys_script} ..."
+	cp -f ${tmp_dev_sys_script} ${vagrant_dev_sys_script}
+	dev_sys_script=${vagrant_dev_sys_script}
 
 	# Remove the temporarily ansible-dev-sys.
 	echo_color ${cyan} "Removing ${tmp_ansible_dev_sys_dir} ..."
@@ -270,6 +297,11 @@ add_localhost_to_known_hosts_for_user $(whoami)
 
 # Running dev-sys.sh ...
 echo_color ${cyan} "Running ${dev_sys_script} '${playbook_name}' as '${DEV_SYS_USER}' ..."
-ssh ${DEV_SYS_USER}@127.0.0.1 -i ${dev_sys_ssh_private_key_file} ${dev_sys_script} ${playbook_name}
+ssh ${DEV_SYS_USER}@127.0.0.1 -i ${dev_sys_ssh_private_key_file} ${dev_sys_script} --from-vagrant ${playbook_name}
+
+if [ ! -z "${vagrant_dev_sys_script}" ]; then
+	echo_color ${cyan} "Removing ${vagrant_dev_sys_script} ..."
+	rm -f ${vagrant_dev_sys_script}
+fi
 
 exit 0
