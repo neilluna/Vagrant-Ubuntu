@@ -74,7 +74,7 @@ module Vagrant_Dev_Sys
       end  # sys.vm.provider ... do |provider|
 
       disk_size = provider_options.key?("disk_size") ? provider_options["disk_size"] : "default"
-      if disk_size == "default"
+      if disk_size != "default"
         sys.disksize.size = disk_size
       end
 
