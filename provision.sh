@@ -12,7 +12,7 @@ function echo_usage()
 	echo ""
 	echo "Provision a VirtualBox virtual machine."
 	echo ""
-	echo "Usage: ${script_name} [options] [playbook_name]"
+	echo "Usage: ${script_name} [options]"
 	echo ""
 	echo "  -h, --help     Output this help information."
 	echo "  -v, --verbose  Verbose output."
@@ -124,7 +124,6 @@ ROOT_UID=0
 ROOT_GID=0
 
 # Command-line switch variables.
-playbook_name=
 verbose=no
 
 # NOTE: This requires GNU getopt. On Mac OS X and FreeBSD, you have to install this separately.
@@ -157,21 +156,13 @@ while true; do
 			;;
 	esac
 done
-while [ ${#} -gt 0 ]; do
-	if [ -z "${playbook_name}" ]; then
-		playbook_name=${1}
-	else
-		echo "${script_name}: Error: Invalid argument: ${1}" >&2
-		echo_usage
-		exit 1
-	fi
-	shift
-done
-if [ -z "${playbook_name}" ]; then
-	playbook_name=common
+if [ ${#} -gt 0 ]; then
+	echo "${script_name}: Error: Invalid argument: ${1}" >&2
+	echo_usage
+	exit 1
 fi
 
-echo_color ${cyan} "Script: '${script_path}', playbook: '${playbook_name}'"
+echo_color ${cyan} "Script: '${script_path}'"
 echo_color ${cyan} "Current user: '$(whoami)', home: '${HOME}'"
 echo_color ${cyan} "Current directory: '$(pwd)'"
 
@@ -295,9 +286,11 @@ if [ ${?} -ne 0 ]; then
 fi
 add_localhost_to_known_hosts_for_user $(whoami)
 
-# Running dev-sys.sh ...
-echo_color ${cyan} "Running ${dev_sys_script} '${playbook_name}' as '${DEV_SYS_USER}' ..."
-ssh ${DEV_SYS_USER}@127.0.0.1 -i ${dev_sys_ssh_private_key_file} ${dev_sys_script} --from-vagrant ${playbook_name}
+# Run dev-sys.sh.
+dev_sys_args="--from-vagrant"
+[ ! -z "${ANSIBLE_DEV_SYS_TAGS}" ] && dev_sys_args="${dev_sys_args} ${ANSIBLE_DEV_SYS_TAGS}"
+echo_color ${cyan} "Running ${dev_sys_script} as '${DEV_SYS_USER}' ..."
+ssh ${DEV_SYS_USER}@127.0.0.1 -i ${dev_sys_ssh_private_key_file} ${dev_sys_script} ${dev_sys_args}
 
 if [ ! -z "${vagrant_dev_sys_script}" ]; then
 	echo_color ${cyan} "Removing ${vagrant_dev_sys_script} ..."

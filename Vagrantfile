@@ -45,9 +45,9 @@ module Vagrant_Dev_Sys
       sys.ssh.private_key_path = provider_options["private_key_file"]
       sys.vm.provider "digital_ocean" do |provider|
         provider.token = provider_options["api_token"]
-        provider.image = provider_options["image"]
-        provider.region = provider_options["region"]
-        provider.size = provider_options["size"]
+        provider.image = provider_options.key?("image") ? provider_options["image"] : "ubuntu-18-04-x64"
+        provider.region = provider_options.key?("region") ? provider_options["region"] : "nyc1"
+        provider.size = provider_options.key?("size") ? provider_options["size"] : "4gb"
         provider.ssh_key_name = provider_options["ssh_key_name"]
       end  # sys.vm.provider ... do |provider|
 
@@ -64,25 +64,27 @@ module Vagrant_Dev_Sys
     provider_options = options["virtualbox"]
 
     config.vm.define vm_name, autostart: options["autostart"] do |sys|
-      sys.vm.box = provider_options["box"]
+      sys.vm.box = provider_options.key?("box") ? provider_options["box"] : "ubuntu/bionic64"
       sys.vm.hostname = vm_name
       sys.vm.provider "virtualbox" do |provider|
         provider.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
         provider.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
-        provider.gui = provider_options["gui"]
-        provider.memory = provider_options["memory"]
+        provider.gui = provider_options.key?("gui") ? provider_options["gui"] : false
+        provider.memory = provider_options.key?("memory") ? provider_options["memory"] : 4096
       end  # sys.vm.provider ... do |provider|
 
-      if provider_options["disk_size"] != 'default'
-        sys.disksize.size = provider_options["disk_size"]
+      disk_size = provider_options.key?("disk_size") ? provider_options["disk_size"] : "default"
+      if disk_size == "default"
+        sys.disksize.size = disk_size
       end
 
-      if provider_options["add_public_network_adapter"]
+      if provider_options.key?("add_public_network_adapter") && provider_options["add_public_network_adapter"]
         sys.vm.network "public_network", type: "dhcp"
       end
 
-      config.vbguest.auto_update = provider_options["update_guest_additions"]
-      if provider_options["update_guest_additions"]
+      update = provider_options.key?("update_guest_additions") ? provider_options["update_guest_additions"] : false
+      config.vbguest.auto_update = update
+      if update
         sys.vm.provision "shell", reboot: true
       end
 
@@ -153,14 +155,14 @@ module Vagrant_Dev_Sys
       shell.keep_color = true
       shell.path = "provision.sh"
 
-      if ansible_dev_sys_options.key?("playbook_name")
-        shell.args = ansible_dev_sys_options["playbook_name"]
-      end
-
       shell.env = {
         "DEV_SYS_USER" => options["user"],
         "DEV_SYS_GROUP" => options["group"]
       }
+
+      if ansible_dev_sys_options.key?("tags")
+        shell.env["ANSIBLE_DEV_SYS_TAGS"] = ansible_dev_sys_options["tags"].join(" ")
+      end
 
       if ansible_dev_sys_options.key?("dir")
         shell.env["ANSIBLE_DEV_SYS_DIR"] = ansible_dev_sys_options["dir"]
