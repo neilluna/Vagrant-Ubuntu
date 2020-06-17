@@ -175,8 +175,9 @@ export DEBIAN_FRONTEND=noninteractive
 # Do not buffer Python stdout.
 export PYTHONUNBUFFERED=TRUE
 
-# The provisioning assets directory.
+# Create the provisioning assets directory.
 assets_dir=${dev_user_home_dir}/.dev-sys
+create_dir_with_mode_user_group ${ASSET_DIR_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${assets_dir}
 
 # Create /opt if it is missing.
 create_dir_with_mode_user_group u+rwx,go+rx-w ${ROOT_UID} ${ROOT_GID} /opt
@@ -192,9 +193,6 @@ retry_if_fail sudo apt-get install --yes software-properties-common
 
 echo_color ${cyan} "Installing or updating git ..."
 retry_if_fail sudo apt-get install --yes git
-
-# Create the provisioning assets directory.
-create_dir_with_mode_user_group ${ASSET_DIR_MODE} ${DEV_SYS_USER} ${DEV_SYS_GROUP} ${assets_dir}
 
 # If ANSIBLE_DEV_SYS_DIR is set, then assume that ansible-dev-sys is being managed by the host.
 if [ ! -z "${ANSIBLE_DEV_SYS_DIR}" ]; then
