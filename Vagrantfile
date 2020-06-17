@@ -61,7 +61,7 @@ module Vagrant_Dev_Sys
     vm_name = options["hostname"]
     options["user"] = "vagrant"
     options["group"] = "vagrant"
-    provider_options = options["virtualbox"]
+    provider_options = options.key?("virtualbox") ? options["virtualbox"] : {}
 
     config.vm.define vm_name, autostart: options["autostart"] do |sys|
       sys.vm.box = provider_options.key?("box") ? provider_options["box"] : "ubuntu/bionic64"
