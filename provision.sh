@@ -293,10 +293,12 @@ fi
 add_localhost_to_known_hosts_for_user $(whoami)
 
 # Run dev-sys.sh.
-dev_sys_args="--from-vagrant"
-[ ! -z "${ANSIBLE_DEV_SYS_TAGS}" ] && dev_sys_args="${dev_sys_args} ${ANSIBLE_DEV_SYS_TAGS}"
+ssh_command="ssh ${DEV_SYS_USER}@127.0.0.1 -i ${dev_sys_ssh_private_key_file}"
+ssh_command="${ssh_command} called_from_vagrant_dev_sys=not_blank"
+ssh_command="${ssh_command} ${dev_sys_script}"
+[ ! -z "${ANSIBLE_DEV_SYS_TAGS}" ] && ssh_command="${ssh_command} ${ANSIBLE_DEV_SYS_TAGS}"
 echo_color ${cyan} "Running ${dev_sys_script} as '${DEV_SYS_USER}' ..."
-ssh ${DEV_SYS_USER}@127.0.0.1 -i ${dev_sys_ssh_private_key_file} ${dev_sys_script} ${dev_sys_args}
+${ssh_command}
 
 if [ ! -z "${vagrant_dev_sys_script}" ]; then
 	echo_color ${cyan} "Removing ${vagrant_dev_sys_script} ..."
