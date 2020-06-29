@@ -21,7 +21,7 @@ module Vagrant_Dev_Sys
     Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       config_file["virtual_machines"].each do |vm_options|
         options = merge_options(vm_options, default_options)
-        provider = options["provider"]
+        provider = options.key?("provider") ? options["provider"] : "virtualbox"
         if provider == "digitalocean"
           configure_digitalocean(config, options)
         end
@@ -34,12 +34,13 @@ module Vagrant_Dev_Sys
 
   # Configure a DigitalOcean VM.
   def self.configure_digitalocean(config, options)
+    autostart = options.key?("autostart") ? options["autostart"] : false
     vm_name = options["hostname"]
     options["user"] = "root"
     options["group"] = "root"
     provider_options = options["digitalocean"]
 
-    config.vm.define vm_name, autostart: options["autostart"] do |sys|
+    config.vm.define vm_name, autostart: autostart do |sys|
       sys.vm.box = "digital_ocean"
       sys.vm.hostname = vm_name
       sys.ssh.private_key_path = provider_options["private_key_file"]
@@ -58,12 +59,13 @@ module Vagrant_Dev_Sys
 
   # Configure a VirtualBox VM.
   def self.configure_virtualbox(config, options)
+    autostart = options.key?("autostart") ? options["autostart"] : false
     vm_name = options["hostname"]
     options["user"] = "vagrant"
     options["group"] = "vagrant"
     provider_options = options.key?("virtualbox") ? options["virtualbox"] : {}
 
-    config.vm.define vm_name, autostart: options["autostart"] do |sys|
+    config.vm.define vm_name, autostart: autostart do |sys|
       sys.vm.box = provider_options.key?("box") ? provider_options["box"] : "ubuntu/bionic64"
       sys.vm.hostname = vm_name
       sys.vm.provider "virtualbox" do |provider|
@@ -78,8 +80,8 @@ module Vagrant_Dev_Sys
         sys.disksize.size = disk_size
       end
 
-      if provider_options.key?("add_public_network_adapter") && provider_options["add_public_network_adapter"]
-        sys.vm.network "public_network", type: "dhcp"
+      if provider_options.key?("network")
+        configure_virtualbox_network(sys, provider_options["network"])
       end
 
       update = provider_options.key?("update_guest_additions") ? provider_options["update_guest_additions"] : false
@@ -92,6 +94,52 @@ module Vagrant_Dev_Sys
       provision(sys, options)
     end  # config.vm.define ... do |sys|
   end  # def self.configure_virtualbox()
+
+  # Configure a VirtualBox VM netowrk.
+  def self.configure_virtualbox_network(sys, network_options)
+    forwarded_ports = network_options.key?("forwarded_ports") ? network_options["forwarded_ports"] : []
+    forwarded_ports.each do |forwarded_port|
+      auto_correct = forwarded_port.key?("auto_correct") ? forwarded_port["auto_correct"] : false
+      protocol = forwarded_port.key?("protocol") ? forwarded_port["protocol"] : "tcp"
+      sys.vm.network "forwarded_port",
+        auto_correct: auto_correct,
+        guest: forwarded_port["guest"],
+        host: forwarded_port["host"],
+        protocol: protocol
+    end  # forwarded_ports.each do |forwarded_port|
+
+    if network_options.key?("private_network")
+      if network_options["private_network"]["ip"] == "dhcp"
+        sys.vm.network "private_network", type: "dhcp"
+      else
+        sys.vm.network "private_network", ip: network_options["private_network"]["ip"]
+      end
+    end  # if network_options.key?("private_network")
+
+    if network_options.key?("public_network")
+      ip = network_options["public_network"]["ip"]
+      interfaces = network_options.key?("interfaces") ? network_options["interfaces"] : []
+      if (ip == "dhcp")
+        if interfaces.empty?
+          sys.vm.network "public_network"
+        else
+          sys.vm.network "public_network", bridge: interfaces
+        end
+      else  # ip == ip-address
+        if interfaces.empty?
+          sys.vm.network "public_network", ip: ip
+        else
+          sys.vm.network "public_network", ip: ip, bridge: interfaces
+        end
+      end  # if (ip == "dhcp") else (ip == ip-address)
+    end  # if network_options.key?("private_network")
+
+    if network_options.key?("usable_port_range")
+      start = network_options["usable_port_range"]["start"]
+      stop = network_options["usable_port_range"]["stop"]
+      sys.vm.usable_port_range = (start..stop)
+    end
+  end  # def self.configure_virtualbox_network()
 
   # Recursively merge two values.
   def self.merge_options(vm_option, default_option)

@@ -19,13 +19,15 @@ virtual_machines:
 
 defaults:
 
-  # The default 'autostart' for a Vagrant VM.
-  autostart: false
+  # Optional.
+  # Should the VM autostart on a 'vagrant up' with no VM explicitly specified?
+  # autostart: false
 
-  # The default provider for a Vagrant VM.
-  provider: 'virtualbox'
+  # Optional.
+  # The default provider for the VM.
+  # provider: 'virtualbox'
 
-  # Optional. 
+  # Optional.
   # ansible-dev-sys settings.
   # Used to fine tune the ansible-dev-sys check-out.
   # ansible_dev_sys:
@@ -86,18 +88,29 @@ defaults:
     # region: 'nyc1'
     # size: '4gb'
 
+  # Optional. 
   # Directories and files to be copied to the VM during provisioning.
   # provision:
+
+    # Optional. 
+    # Directories to be copied to the VM during provisioning.
+    # 'dir_mode' specifies the mode to set for the remote directories.
+    # 'file_mode' specifies the mode to set for the remote files.
     # dirs:
     # - host: 'C:\full\path\to\the\dir\to\copy\on\the\host'
     #   remote: '/full/path/to/the/destination/dirname/on/the/vm'
     #   dir_mode: 'chmod-mode-for-all-the-dirs-in-the-vm-destination'
     #   file_mode: 'chmod-mode-for-all-the-files-in-the-vm-destination'
+
+    # Optional. 
+    # Files to be copied to the VM during provisioning.
+    # 'file_mode' specifies the mode to set for the remote files.
     # files:
     # - host: 'C:\full\path\to\the\file\to\copy\on\the\host'
     #   remote: '/full/path/to/the/destination/filename/on/the/vm'
     #   file_mode: 'chmod-mode-for-the-file-at-the-vm-destination'
 
+  # Optional. 
   # Directories to be synced during provisioning and upon command.
   # synced_folders:
     # - host: 'C:\full\path\to\the\dir\to\sync\on\the\host'
@@ -108,8 +121,46 @@ defaults:
   # virtualbox:
 
     # Optional.
-    # Should the VM have a network adapter that bridges to the host's network?
-    # add_public_network_adapter: false
+    # Host/VM network settings.
+    # network:
+
+      # Optional.
+      # Ports to forward to/from the host and VM.
+      # forwarded_ports:
+      # - auto_correct: true
+      #   host: 8000
+      #   guest: 80
+      #   protocol: 'tcp'
+
+      # Optional.
+      # If specied, the VM is on a private network with the host, and cannot be accessed by the host's WAN.
+      # Note: This is mutually exclusive with 'public_network'.
+      # private_network:
+        # Required.
+        # 'ip' can be 'dhcp', or a static IPv4 or IPv6 address.
+        # ip: 'dhcp'
+
+      # Optional.
+      # If specied, the VM is is bridged (on a public network) with the host, and can be accessed by the host's WAN.
+      # Note: This is mutually exclusive with 'private_network'.
+      # public_network:
+
+        # Required.
+        # 'ip' can be 'dhcp', or a static IPv4 or IPv6 address.
+        # ip: 'dhcp'
+
+        # Optional.
+        # A list of interfaces to use as the bridge.
+        # Entries in the list are in priority order. The first interface to be present will be used.
+        # interfaces:
+        # - 'Killer Wireless-n/a/ac 1535 Wireless Network Adapter'
+        # - 'Killer E2400 Gigabit Ethernet Controller'
+
+      # Optional.
+      # The range (inclusive) or port numbers to use for port forwarding, if a port collision occurs.
+      # usable_port_range:
+      #   start: 8000
+      #   end: 8999
 
     # Optional.
     # Should the host display the VM's console?
