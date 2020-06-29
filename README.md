@@ -1,5 +1,7 @@
-# ansible-dev-sys
-Provision one or more development environments using Vagrant
+# vagrant-dev-sys
+Version 0.1.0
+
+Provision one or more development environments using Vagrant.
 
 ## Prerequisites
 In order to use this project, you must have the following:
